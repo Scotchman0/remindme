@@ -1,0 +1,43 @@
+#!/bin/bash
+#CLI reminder toolkit for alerts/terminal headers and more
+#Written by Will Russell/Scotchman0
+#9/15/21
+#Version 0.1
+
+#################################################################################
+
+#Define actions desired:
+#because we want to have an 'echo to the top of your new cli instance' feature
+#We need to define a file to source:
+#CLI BANNER REMINDERS:
+# - a text file location that gets written to by the remindme command
+# - this text file is sourced by ~/.bashrc or ~/.zshrc
+# - setup must ask to echo the source command: $ echo "echo ~/.remindme/banner_reminders" >> ~/.bashrc
+
+#ALERTS TRIGGERED VIA CRON SCHEDULING
+# - a text file location that gets written to by the remindme command: ~/.remindme/alert_reminders
+# - each entry is handled by entry number tied to a cronscript maybe?
+# - example entry format: $ remindme @1:00pm "Gotta buy socks"
+#   - alert_reminders gets an entry "gotta buy socks" and a unique string identifier --> 30932 "gotta buy socks"
+#   - cronjob task is started, that triggers an alert echo of the entry tied to the unique id maybe.
+# Might could/should explore using 'at' command for this, if can tie into the functionality. 
+# desire pop-up alerts in alerts-manager
+
+#Features that would be nice to have: 
+# inclusion of some repeating reminders
+# example: $ remindme @1:00pm "Gotta buy socks" --repeat daily|weekly|monthly|custom
+# if you tag custom, it asks for cron measurements: 5 * * 1 * with a print out of examples
+
+
+####################################~~FUNCTION BLOCKS~~########################
+setup() {
+#run only if ~/.remindme.conf does not exist - see firstrun block
+#define file locations and paths:
+mkdir ~/.remindme/
+touch ~/.remindme/banner_reminders
+touch ~/.remindme/alert_reminders
+touch ~/.remindme/remindme.conf
+}
+
+
+
