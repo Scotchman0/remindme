@@ -33,11 +33,54 @@
 setup() {
 #run only if ~/.remindme.conf does not exist - see firstrun block
 #define file locations and paths:
-mkdir ~/.remindme/
-touch ~/.remindme/banner_reminders
-touch ~/.remindme/alert_reminders
-touch ~/.remindme/remindme.conf
+touch ~/.remindme_reminders
+echo "echo ## REMINDERS ##" >> ~/.zshrc
+echo "cat ~/.remindme_reminders" >> ~/.zshrc
 }
 
+#basic launch block:
+# while test $# -gt 0; do
+# 	case $1 in
+# 		in|at|when) # modifier value to indicate the next argument is a time value
+# 			shift
+# 			if test $# -gt 0; then
+# 				set_timer="$@"
 
 
+alert() {
+	notify-send REMINDER $reminder_
+}
+
+add_reminder() {
+	echo emptystring
+}
+
+remove_reminder() {
+echo emptystring
+}
+
+#go block:
+
+while test $# -gt 0; do #general while loop to lock behavior surrounding case options. 
+  case "$1" in
+  	-n|--new) #create new note or edit existing note (*if specify exact note name)
+      shift
+      if test $# -gt 0; then
+        echo $@ >> ~/.remindme_reminders
+      else
+        echo "reminder cannot be empty string"
+      fi
+      break
+      ;;
+    -a|--all) #no option print existing reminders block
+      	cat ~/.remindme_reminders
+      break
+      ;;
+    #-d|--delete)
+      *) #no option default
+		echo "invalid option presented, try remindme -h for usage"
+		break
+		;;
+  esac
+done
+exit 0
