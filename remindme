@@ -63,7 +63,7 @@ echo emptystring
 
 while test $# -gt 0; do #general while loop to lock behavior surrounding case options. 
   case "$1" in
-  	-n|--new) #create new note or edit existing note (*if specify exact note name)
+  	-n|new) #create new note or edit existing note (*if specify exact note name)
       shift
       if test $# -gt 0; then
         echo $@ >> ~/.remindme_reminders
@@ -72,11 +72,14 @@ while test $# -gt 0; do #general while loop to lock behavior surrounding case op
       fi
       break
       ;;
-    -a|--all) #no option print existing reminders block
+    -a|all) #no option print existing reminders block
       	cat ~/.remindme_reminders
       break
       ;;
-    #-d|--delete)
+    -c|clear) # remove all reminders
+        echo "" > ~/.remindme_reminders
+        break
+      ;;
       *) #no option default
 		echo "invalid option presented, try remindme -h for usage"
 		break
