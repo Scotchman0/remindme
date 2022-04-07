@@ -21,7 +21,7 @@
 #   - alert_reminders gets an entry "gotta buy socks" and a unique string identifier --> 30932 "gotta buy socks"
 #   - cronjob task is started, that triggers an alert echo of the entry tied to the unique id maybe.
 # Might could/should explore using 'at' command for this, if can tie into the functionality. 
-# desire pop-up alerts in alerts-manager
+# desire pop-up alerts in alerts-manager - also 'wall' commands
 
 #Features that would be nice to have: 
 # inclusion of some repeating reminders
@@ -33,9 +33,23 @@
 setup() {
 #run only if ~/.remindme.conf does not exist - see firstrun block
 #define file locations and paths:
-touch ~/.remindme_reminders
-echo "echo ## REMINDERS ##" >> ~/.zshrc
-echo "cat ~/.remindme_reminders" >> ~/.zshrc
+touch ~/.task_list
+echo "would you like to have tasks added to your ~/.*shrc profile to print list when you start a new shell?"
+echo "y|N"
+read option
+case $option in
+  y|Y) clear
+    echo "echo ## REMINDERS ##" >> ~/.*shrc
+    echo "cat ~/.task_list" >> ~/.*shrc
+    echo "cat command added to your ~/.*shrc file to read contents from ~/.task_list"
+    ;;
+  n|N) clear
+    echo "no configuration changes made - tasks are managed in ~/.task_list"
+    ;;
+  *) echo "non y/n answer recieved, defaulting to no change"
+    ;;
+esac
+
 }
 
 #basic launch block:
@@ -63,6 +77,16 @@ echo emptystring
 
 while test $# -gt 0; do #general while loop to lock behavior surrounding case options. 
   case "$1" in
+    -h|help)
+      shift
+      echo "#######  task help #######"
+      echo "command usage: $ task <option> <string>"
+      echo "task -h|help: print this breif help"
+      echo "task -n|new: create new reminder entry --> $ task -n 'buy eggs'"
+      echo "task -a|all: pring all reminders in list: 'buy eggs' 'buy milk' 'get gas'"
+      echo "task -c|clear: purge all reminders from list"
+      break
+      ;;
   	-n|new) #create new note or edit existing note (*if specify exact note name)
       shift
       if test $# -gt 0; then
@@ -81,8 +105,9 @@ while test $# -gt 0; do #general while loop to lock behavior surrounding case op
         break
       ;;
       *) #no option default
-		echo "invalid option presented, try remindme -h for usage"
-		break
+        echo "invalid option, printing help"
+        task -h
+		    break
 		;;
   esac
 done
