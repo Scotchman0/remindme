@@ -38,9 +38,8 @@ TASKPATH=~/.task_list
 ####################################~~FUNCTION BLOCKS~~########################
 setup() {
 #run only if ~/.remindme.conf does not exist - see firstrun block
-#define file locations and paths:
+#define file locations and paths
 touch ${TASKPATH}
-
 }
 
 auto_complete() {
