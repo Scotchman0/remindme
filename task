@@ -63,15 +63,6 @@ esac
 }
 
 
-#basic launch block:
-# while test $# -gt 0; do
-# 	case $1 in
-# 		in|at|when) # modifier value to indicate the next argument is a time value
-# 			shift
-# 			if test $# -gt 0; then
-# 				set_timer="$@"
-
-
 alert() {
 	notify-send REMINDER $reminder_
 }
@@ -119,19 +110,15 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
       read reply
       case $reply in
         y|Y)
-          sed -i '${@}d' $TASKPATH
           shift
+          DLINE="$@"
+          echo $DLINE
+          sed -i "${DLINE}d" $TASKPATH
           echo "deleted!"
           ;;
         n|N)
-          shift
           echo "cancelled delete"
           exit 1
-          ;;
-          *)
-          sed -i '${@}d' $TASKPATH
-          shift
-          echo "deleted!"
           ;;
         esac
         break
