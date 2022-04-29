@@ -92,7 +92,7 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
       echo "command usage: $ task <option> <string>"
       echo "task -h|help: print this breif help"
       echo "task -n|new: create new reminder entry --> $ task -n 'buy eggs'"
-      echo "task -a|all: pring all reminders in list: 'buy eggs' 'buy milk' 'get gas'"
+      echo "task -d|delete: delete line entry by number"
       echo "task -c|clear: purge all reminders from list"
       break
       ;;
@@ -112,7 +112,6 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
         y|Y)
           shift
           DLINE="$@"
-          echo $DLINE
           sed -i "${DLINE}d" $TASKPATH
           echo "deleted!"
           ;;
@@ -124,9 +123,22 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
         break
         ;;
     -c|clear) # remove all reminders
-        echo "" > ${TASKPATH}
-        break
-      ;;
+       echo "do you wish to purge all task entries?"
+       read reply
+       case $reply in
+         y|Y)
+           shift
+           echo "removing all reminders"
+           rm $TASKPATH
+           touch $TASKPATH
+           ;;
+         n|N)
+           echo "cancelled delete"
+           exit 1
+           ;;
+         esac
+         break
+         ;;
       *) #no option default
         echo "all active tasks: use -h for more options"
         cat -n ${TASKPATH}
