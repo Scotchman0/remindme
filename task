@@ -29,11 +29,22 @@
 # if you tag custom, it asks for cron measurements: 5 * * 1 * with a print out of examples
 
 
+
+
+######################~~VARIABLES~~##############################
+TASKPATH=~/.task_list
+
+
 ####################################~~FUNCTION BLOCKS~~########################
 setup() {
 #run only if ~/.remindme.conf does not exist - see firstrun block
 #define file locations and paths:
-touch ~/.task_list
+touch ${TASKPATH}
+
+}
+
+auto_complete() {
+  # #would you like to enable tab completion?
 echo "would you like to have tasks added to your ~/.*shrc profile to print list when you start a new shell?"
 echo "y|N"
 read option
@@ -49,8 +60,8 @@ case $option in
   *) echo "non y/n answer recieved, defaulting to no change"
     ;;
 esac
-
 }
+
 
 #basic launch block:
 # while test $# -gt 0; do
@@ -73,9 +84,16 @@ remove_reminder() {
 echo emptystring
 }
 
-#go block:
+if [ ! -f "$TASKPATH" ]; then
+   setup
+   auto_complete
+   echo "establishing default settings in ~/.notes.conf and creating default save directory in ~/my-notes"
+   echo ""
+   echo "try task -h or task -n 'buy groceries' for getting started"
+fi
 
-while test $# -gt 0; do #general while loop to lock behavior surrounding case options. 
+#primary action block:
+while test $# -gt -1; do #general while loop to lock behavior surrounding case options. 
   case "$1" in
     -h|help)
       shift
@@ -90,23 +108,41 @@ while test $# -gt 0; do #general while loop to lock behavior surrounding case op
   	-n|new) #create new note or edit existing note (*if specify exact note name)
       shift
       if test $# -gt 0; then
-        echo $@ >> ~/.remindme_reminders
-      else
+        echo $@ >> ${TASKPATH}
+              else
         echo "reminder cannot be empty string"
       fi
       break
       ;;
-    -a|all) #no option print existing reminders block
-      	cat ~/.remindme_reminders
-      break
-      ;;
+    -d|delete) #delete line entry by number
+      echo "do you wish to delete line entry $@? Y|n"
+      read reply
+      case $reply in
+        y|Y)
+          sed -i '${@}d' $TASKPATH
+          shift
+          echo "deleted!"
+          ;;
+        n|N)
+          shift
+          echo "cancelled delete"
+          exit 1
+          ;;
+          *)
+          sed -i '${@}d' $TASKPATH
+          shift
+          echo "deleted!"
+          ;;
+        esac
+        break
+        ;;
     -c|clear) # remove all reminders
-        echo "" > ~/.remindme_reminders
+        echo "" > ${TASKPATH}
         break
       ;;
       *) #no option default
-        echo "invalid option, printing help"
-        task -h
+        echo "all active tasks: use -h for more options"
+        cat -n ${TASKPATH}
 		    break
 		;;
   esac
