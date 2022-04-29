@@ -66,8 +66,12 @@ alert() {
 	notify-send REMINDER $reminder_
 }
 
-add_reminder() {
-	echo emptystring
+date_reminder() {
+	echo "now adding an alert to reminder entry $TARGET"
+}
+
+timer_reminder() {
+  echo "now adding a timer to task entry $TARGET"
 }
 
 remove_reminder() {
@@ -95,6 +99,25 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
       echo "task -c|clear: purge all reminders from list"
       break
       ;;
+    -r|reminder) #create an alert attached to existing line entry
+      shift
+      TARGET="$@"
+      echo now adding a reminder for task number: $TARGET
+      sed -n "${TARGET}p" $TASKPATH
+      echo "would you like to set a date/time or set a timer? (D|date,T|timer)"
+      read response
+      case $response in
+        D|d|date|Date) #setting a date/time
+          shift
+          date_reminder
+          ;;
+        T|t|timer|Time|time|Timer) #setting a timer
+          shift
+          timer_reminder
+          ;;
+        esac
+        break
+        ;;
   	-n|new) #create new note or edit existing note (*if specify exact note name)
       shift
       if test $# -gt 0; then
