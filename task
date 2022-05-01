@@ -97,6 +97,7 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
       echo "task -n|new: create new reminder entry --> $ task -n 'buy eggs'"
       echo "task -d|delete: delete line entry by number... ex: 'task -d 3'"
       echo "task -c|clear: purge all reminders from list"
+      echo "task -r|reminder: set a date or a timer for a task alert..."
       break
       ;;
     -r|reminder) #create an alert attached to existing line entry
