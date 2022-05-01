@@ -95,7 +95,7 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
       echo "command usage: $ task <option> <string>"
       echo "task -h|help: print this breif help"
       echo "task -n|new: create new reminder entry --> $ task -n 'buy eggs'"
-      echo "task -d|delete: delete line entry by number"
+      echo "task -d|delete: delete line entry by number... ex: 'task -d 3'"
       echo "task -c|clear: purge all reminders from list"
       break
       ;;
