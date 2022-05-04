@@ -163,6 +163,7 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
          break
          ;;
       *) #no option default
+        echo "##--task-list--##"
         echo "all active tasks: use -h for more options"
         cat -n ${TASKPATH}
 		    break
