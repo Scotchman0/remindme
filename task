@@ -129,6 +129,7 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
       break
       ;;
     -d|delete) #delete line entry by number
+      cat -n ${TASKPATH}
       echo "do you wish to delete line entry $@? Y|n"
       read reply
       case $reply in
