@@ -40,6 +40,7 @@ setup() {
 #define file locations and paths
 mkdir ${TASKDIR}
 touch ${TASKPATH}
+echo "this software uses the package 'at' - please ensure it is installed to enable reminders"
 }
 
 
@@ -65,52 +66,50 @@ touch ${TASKPATH}
 
 
 alert() {
-	notify-send REMINDER $reminder_
+	if [[ ETA == NONE ]]
+  then
+    #notify-send $REMINDER | at $ETA
+    #wall $REMINDER | at $ETA
+    sleep 1
+    exit 0
+  else
+    #echo "notify-send 'node job has completed: $REMINDER'" | at $ETA
+    echo "wall 'node job has completed: $REMINDER'" | at $ETA
+    AT_QUEUE=$(atq | wc -l)
+  fi
 }
 
-date_reminder() {
-	echo "now adding an alert to reminder entry $TARGET"
+alert_remove(){
+  echo "holding"
 }
-
-timer_reminder() {
-  echo "now adding a timer to task entry $TARGET"
-}
-
-remove_reminder() {
-echo emptystring
-}
-
-new_task() {
-echo emptystring
-#hold space for logical new-task entry
-}
-
-
-
 
 #primary action block:
 while test $# -gt -1; do #general while loop to lock behavior surrounding case options. 
   case "$1" in
     -n|--new) #new-task entry baseline (TESTING WITH FUNCTION BLOCK)
       shift
-      #define default values for update entry
-      #ETA=$(if [[ ${SETTIME} != 0 ]]; then $(echo $(date -d +${SETTIME}hours +%r)); else NONE; fi)
-      #ETA=$(echo $(date -d +${SETTIME}hours +%r))
-      #ETA=$(echo $(date -d +${SETTIME}hours +%r))
-      GPU="No"
+      #Default value setting of variables
+      GPU="N"
       USER=$(whoami)
+      # logical call set for 'task was submitted, and has a value after -n of length longer than 0'
         if test $# -gt 0; then
+          #set the task as a value for use with AT
+          REMINDER=$@
           echo "add estimated hours as an integer, insert 0 for NONE"
           read SETTIME
           if [[ ${SETTIME} != 0 ]]
             then
-              ETA=$(echo $(date -d +${SETTIME}hours +%r))
+              #ETA=$(echo $(date -d +${SETTIME}hours +%r))
+              ETA=$(echo $(date -d +${SETTIME}hours +%H:%M))
+              alert
             else
               ETA=NONE
+              AT_QUEUE=Null
           fi
           echo "Uses GPU? (Y/N)"
           read GPU
-        echo "${USER} | $@ | $ETA | $GPU" >> ${TASKPATH}
+        echo "${USER} | $@ | $ETA | $AT_QUEUE | $GPU" >> ${TASKPATH}
+
         else
           "null"
         fi
@@ -182,8 +181,7 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
     #   break
     #   ;;
 
-    
-
+  
     -d|--delete) #delete line entry by number
       cat -n ${TASKPATH}
       echo "do you wish to delete line entry $@? Y|n"
@@ -192,6 +190,7 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
         y|Y)
           shift
           DLINE="$@"
+          cat -n ./.task_list | awk {'print $1'} grep '$DLINE' | awk {'print $8'}
           sed -i "${DLINE}d" $TASKPATH
           echo "deleted!"
           ;;
@@ -253,9 +252,11 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
         echo " ++++++++++++++++++++++++++++"
         echo "      JOBS ON THIS NODE"
         echo " =~=~=~=~=~=~=~=~=~=~=~=~=~=~"
-        echo "JOB USER TASK ETA GPU" | awk '{ printf "%-5s %-20s %-38s %-15s %-2s\n", $1, $2, $3, $4, $5}' #default
-        cat -n ${TASKPATH} | awk 'BEGIN { FS = "|" };{ printf "%-1s %-50s %-15s %-10s\n", $1, $2, $3, $4, $5}' #default
-		   break
+        #echo "JOB USER TASK ETA ATQ GPU" | awk '{ printf "%-5s %-20s %-38s %-15s %-2s\n", $1, $2, $3, $4, $5}' #default
+        #cat -n ${TASKPATH} | awk 'BEGIN { FS = "|" };{ printf "%-1s %-50s %-15s %-10s\n", $1, $2, $3, $4, $5}' #default
+        echo "JOB USER TASK ETA ATQ GPU" | awk '{ printf "%-5s %-20s %-38s %-15s %-5s %-2s\n", $1, $2, $3, $4, $5, $6}' #test
+        cat -n ${TASKPATH} | awk 'BEGIN { FS = "|" };{ printf "%-1s %-50s %-15s %-5s %-10s\n", $1, $2, $3, $4, $5, $6}' #test
+        break
 		;;
   esac
 done
