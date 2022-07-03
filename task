@@ -21,10 +21,13 @@
 #      2  will   Long running inference project                     NONE   +NONE+   N  
 
 ######################~~VARIABLES~~##############################
-TASKDIR=~/task-app
-TASKPATH=$TASKDIR/tasks
-TASKCONFIG=$TASKDIR/task.conf
+# TASKDIR=~/task-app
+# TASKPATH=$TASKDIR/tasks
+# TASKCONFIG=$TASKDIR/task.conf
 
+TASKDIR=/tmp/task-app
+TASKPATH=$TASKDIR/task_list
+TASKCONFIG=$TASKDIR/task.conf
 
 ####################################~~FUNCTION BLOCKS~~########################
 
@@ -113,6 +116,23 @@ fi
 #primary action block:
 while test $# -gt -1; do #general while loop to lock behavior surrounding case options. 
   case "$1" in
+    -h|help)
+      shift
+      echo "#######  task help #######"
+      echo ""
+      echo "command usage: $ task <option> <string>"
+      echo " -h|help: print this brief help"
+      echo " -n|--new: create new reminder entry --> $ task -n 'buy eggs'"
+      echo " >>> '-n' has follow-up prompts: ETA for reminders and a GPU in-use Y/N prompt"
+      echo ""
+      echo " -d|--delete: delete line entry by number... ex: 'task -d 3'"
+      echo " -C|--clear: purge all reminders from list"
+      echo " config: open an editor and modify the config file to set options"
+      echo " edit: opens an editor to modify the raw task file to modify entries"
+      echo ""
+      echo "#######  task help #######"
+      break
+      ;;
     -n|--new) #new-task entry baseline (TESTING WITH FUNCTION BLOCK)
       shift
       #Default value setting of variables
@@ -122,7 +142,7 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
         if test $# -gt 0; then
           #set the task as a value for use with AT
           REMINDER=$@
-          echo "add estimated hours for alert on job completion as an integer, insert 0 for NONE"
+          echo "Set ETA value as integer in hours, insert 0 for none"
           read SETTIME
           if [[ ${SETTIME} != 0 ]]
             then
@@ -132,7 +152,7 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
               ETA=NONE
               AT_QUEUE="NONE"
           fi
-          echo "GPU in-use? (Y/N)"
+          echo "Toggle indicator for GPU in-use: (Y/N)"
           read GPU
           #print the primary output to the $TASKPATH file once options set
           echo "${USER} | $@ | $ETA | +$AT_QUEUE+ | $GPU" >> ${TASKPATH}
@@ -141,22 +161,13 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
         fi
       break
       ;;
-    setup) #calls a default editor to modify the config using default editor selection
+    config) #calls a default editor to modify the config using default editor selection
       $EDITOR $TASKCONFIG
       break
       ;;
-    -h|help)
-      shift
-      echo "#######  task help #######"
-      echo "command usage: $ task <option> <string>"
-      echo "task -h|help: print this breif help"
-      echo "task -n|--new: create new reminder entry --> $ task -n 'buy eggs'"
-      echo "task -n has sub-options: ETA for reminders and a GPU in-use Y/N prompt"
-      echo "task -d|--delete: delete line entry by number... ex: 'task -d 3'"
-      echo "task -C|--clear: purge all reminders from list"
-      echo ""
-      echo "currently, task does not support editing task entries except manually via $TASKPATH"
-      echo "you can/should delete and re-create entries if $TASKPATH editing is restricted"
+    edit) #calls a default editor to modify the existing TASK entries (note does not modify ATQ)
+      $EDITOR $TASKPATH
+      echo "tasks edited, note that existing ATQ entries are not modified, you may need to delete manually with atrm <#>"
       break
       ;;
     -d|--delete|--done) #delete line entry by number
