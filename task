@@ -22,6 +22,7 @@
 ######################~~VARIABLES~~##############################
 TASKDIR=~/bin/task-testing/
 TASKPATH=$TASKDIR/.task_list
+COMPLETED=$TASKDIR/.completed_list
 
 
 # new-user init:
@@ -77,7 +78,7 @@ alert() {
     #placement of custom 'T' task queue to keep things unified -- Note, select EITHER Wall echo or
     # notify-send from echo options below, there is currently only one atq value for jobs
     #echo "notify-send 'node job has completed: $REMINDER'" | at $ETA
-    echo "wall 'node job has completed: $REMINDER'" | at -q T $ETA 
+    echo "wall 'node job has completed: $REMINDER' | tee >> $COMPLETED" | at -q T $ETA 
     AT_QUEUE=$(atq -q T | tail -n 1 | awk {'print $1'})
   fi
 }
@@ -104,11 +105,10 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
         if test $# -gt 0; then
           #set the task as a value for use with AT
           REMINDER=$@
-          echo "add estimated hours as an integer, insert 0 for NONE"
+          echo "add estimated hours for alert on job completion as an integer, insert 0 for NONE"
           read SETTIME
           if [[ ${SETTIME} != 0 ]]
             then
-              #ETA=$(echo $(date -d +${SETTIME}hours +%r))
               ETA=$(echo $(date -d +${SETTIME}hours +%H:%M))
               alert
             else
@@ -135,68 +135,12 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
       #echo "task -r|reminder: set a date or a timer for a task alert..."
       break
       ;;
-    # -e|--eta) #create an alert attached to existing line entry
-    #   shift
-    #   TARGET="$@"
-    #   echo now adding a reminder for task number: $TARGET
-    #   sed -n "${TARGET}p" $TASKPATH
-    #   echo "would you like to set a date/time or set a timer? (D|date,T|timer)"
-    #   read response
-    #   case $response in
-    #     D|d|date|Date) #setting a date/time
-    #       shift
-    #       date_reminder
-    #       ;;
-    #     T|t|timer|Time|time|Timer) #setting a timer
-    #       shift
-    #       timer_reminder
-    #       ;;
-    #     esac
-    #     break
-    #     ;;
-    #ORIGINAL -n new-task block:
-  	# -n|--new) #create new note or edit existing note (*if specify exact note name)
-   #    shift
-   #    if getopts $# -gt 0; then
-   #      echo "$whoami | $@ | $ETA | $GPU >> ${TASKPATH}"
-   #    else
-   #      echo "job description cannot be empty string"
-   #    fi
-   #    break
-   #    ;;
-
-# LOGIC DESCRIBE:
-#- Case loop after N should trigger a FUNCTION, and in that function will be sub-case effects
-#- In this way, every '-n' will go to "new_task()" which then will loop through ETA and GPU y/n
-
-
-
-   #UPDATED/TESTING -n new-task block:
-    # -n|--new) #new-task entry baseline
-    #   shift
-    #   #define default values for update entry
-    #   ETA=$(date | TIME_ESTIMATE )
-    #   GPU="No"
-    #   USER=$(whoami)
-    #     if test $# -gt 0; then
-    #       echo "add ETA (defaults to none)"
-    #       read TIME_ESTIMATE
-    #       echo "Uses GPU? (Y/N)"
-    #       read GPU
-    #     echo "${USER} | $@ | $ETA | $GPU" >> ${TASKPATH}
-    #     else
-    #       "null"
-    #     fi
-    #   break
-    #   ;;
-
-  
-    -d|--delete) #delete line entry by number
+    -d|--delete|--done) #delete line entry by number
       cat -n ${TASKPATH}
-      echo "do you wish to delete line entry $@? Y|n"
+      echo "do you wish to delete task entry $@? Y|n - will also delete wall echo alert"
       read reply
       case $reply in
-        y|Y)
+        y|Y) ## NEED TO INCLUDE A CHECK THAT IF ENTRY=0 THEN SKIP ALERT_REMOVE
           shift
           DLINE="$@"
           ENTRY=$(cat -n $TASKPATH | grep ${DLINE} | awk {'print $8'})
@@ -215,28 +159,6 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
         esac
         break
         ;;
-    # -c|complete) # move completed tasks to secondary store file ##NOT FUNCTIONAL PRESENTLY
-    #    cat -n ${TASKPATH}
-    #    echo "Do you wish to mark line entry $@ completed? Y|n"
-    #    read reply
-    #    case reply in 
-    #     y|Y)
-    #       #shift
-    #       DLINE="$@"
-    #       cat -n ${TASKPATH} | grep $@
-    #       #sed -i "${DLINE}d" $TASKPATH
-    #       #echo "task completed! review completed tasks with 'task -a'"
-    #       ;;
-    #      n|N)
-    #       #echo "cancelled change"
-    #       exit 1
-    #       ;;
-    #    esac
-    #    break
-    #    ;;
-    # -a|all) #display all tasks, open and completed
-    #    echo "hold"
-    #   ;;
     -C|--clear) # purge all reminders
        echo "do you wish to purge all task entries?"
        read reply
