@@ -1,7 +1,8 @@
 #!/bin/bash
+#TASK - A CLI reminders and task management toolkit
 #CLI reminder toolkit for alerts/terminal headers and more
 #Written by Will Russell/Scotchman0
-#patch update: 6/28/22
+#patch update: 7/3/22
 #DEVELOP BRANCH TO BECOME NEW FORK FOR JOB MANAGEMENT ON NODES + SHARED WORKLOAD MANAGEMENT
 
 #################################################################################
@@ -26,7 +27,7 @@ TASKPATH=$TASKDIR/.task_list
 # new-user init:
 if [ ! -f "$TASKPATH" ]; then
    setup
-   #auto_complete ##REMOVED IN FORK
+   auto_complete
    echo "establishing default setup and storing tasks in ${TASKPATH}"
    echo ""
    echo "try task -h for usage and syntax"
@@ -40,7 +41,7 @@ setup() {
 #define file locations and paths
 mkdir ${TASKDIR}
 touch ${TASKPATH}
-echo "this software uses the package 'at' - please ensure it is installed to enable reminders"
+echo "this software uses the package 'at' - please ensure it is installed/enabled to allow reminders"
 }
 
 
@@ -73,8 +74,9 @@ alert() {
     sleep 1
     exit 0
   else
+    #placement of custom 'T' task queue to keep things unified -- Note, select EITHER Wall echo or
+    # notify-send from echo options below, there is currently only one atq value for jobs
     #echo "notify-send 'node job has completed: $REMINDER'" | at $ETA
-    #placement of custom 'T' task queue to keep things unified
     echo "wall 'node job has completed: $REMINDER'" | at -q T $ETA 
     AT_QUEUE=$(atq -q T | tail -n 1 | awk {'print $1'})
   fi
@@ -83,6 +85,11 @@ alert() {
 alert_remove(){
   echo "$ENTRY is going to be purged from atq"
   atrm ${ENTRY}
+}
+
+alert_remove_all (){
+  #purge all atq -T entries
+  for x in $(atq -q T | awk {'print $1'}); do atrm $x; done
 }
 
 #primary action block:
@@ -239,6 +246,7 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
            echo "removing all reminders"
            rm $TASKPATH
            touch $TASKPATH
+           alert_remove_all
            ;;
          n|N)
            echo "cancelled delete"
@@ -258,7 +266,7 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
         #echo "JOB USER TASK ETA ATQ GPU" | awk '{ printf "%-5s %-20s %-38s %-15s %-2s\n", $1, $2, $3, $4, $5}' #default
         #cat -n ${TASKPATH} | awk 'BEGIN { FS = "|" };{ printf "%-1s %-50s %-15s %-10s\n", $1, $2, $3, $4, $5}' #default
         echo "JOB USER TASK ETA ATQ GPU" | awk '{ printf "%-5s %-20s %-38s %-5s %-5s %-2s\n", $1, $2, $3, $4, $5, $6}' #test
-        cat -n ${TASKPATH} | awk 'BEGIN { FS = "|" };{ printf "%-1s %-50s %-5s %-5s %-10s\n", $1, $2, $3, $4, $5, $6}' #test
+        cat -n ${TASKPATH} | awk 'BEGIN { FS = "|" };{ printf "%-1s %-50s %-5s %-5s %-8s\n", $1, $2, $3, $4, $5, $6}' #test
         break
 		;;
   esac
