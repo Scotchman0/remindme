@@ -11,11 +11,14 @@
 
 #################################################################################
 
+# EXAMPLE OUTPUT:
+
 #  ++++++++++++++++++++++++++++
 #       JOBS ON THIS NODE
 #  =~=~=~=~=~=~=~=~=~=~=~=~=~=~
-# JOB   USER                 TASK                                   ETA     ATQ   GPU
-#      1  will   testing                                            17:23   25    y 
+# JOB     USER                 TASK                                 ETA     ATQ   GPU
+#      1  will   test                                               17:22   +35+   N      
+#      2  will   Long running inference project                     NONE   +NONE+   N  
 
 ######################~~VARIABLES~~##############################
 TASKDIR=~/task-app
@@ -37,20 +40,8 @@ echo "Will create reminders in queue 'T' - set this value manually if you wish w
 echo "#Taskconfig settings for task script written/maintained by Will Russell/Scotchman0" >> $TASKCONFIG
 echo "#The following variables can be set to modify base behavior" >> $TASKCONFIG
 echo "QUEUE=T #define defult atq for jobs relating to task" >> $TASKCONFIG
-echo "LOGPATH=$TASKDIR/tasks.log #define location for optional logging" >> $TASKCONFIG
-echo "ENABLE_LOGGING=false #toggle to true to log output to $LOGPATH" >> $TASKCONFIG
 }
 
-logging() {
-  #if logging is enabled, then dump all output into $LOGPATH
-  if [[ ENABLE_LOGGING=true ]]
-  then
-    2>&1 >> $LOGPATH
-  else
-    #set dummy variable to not fail else condition
-    ignored=true
-  fi
-}
 
 auto_complete() {
 # Add tasks printout to new-shell start:
@@ -143,8 +134,8 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
           fi
           echo "GPU in-use? (Y/N)"
           read GPU
-        echo "${USER} | $@ | $ETA | +$AT_QUEUE+ | $GPU" >> ${TASKPATH}
-
+          #print the primary output to the $TASKPATH file once options set
+          echo "${USER} | $@ | $ETA | +$AT_QUEUE+ | $GPU" >> ${TASKPATH}
         else
           "null"
         fi
