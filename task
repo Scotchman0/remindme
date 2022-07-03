@@ -7,30 +7,23 @@
 
 #################################################################################
 
-# desired layout template:
-
-# ++++++++++++++++++++++++++++
-# JOBS ON THIS NODE
-# =~=~=~=~=~=~=~=~=~=~=~=~=~=~
-# NAME               ETA                    GPU USE
-# yolo training     7-2-22 1430               yes
-# =~=~=~=~=~=~=~=~=~=~=~=~=~=~
-
-
-# desired use case:  task -n 'yolo training' --eta 40h --gpu 'yes'
+#  ++++++++++++++++++++++++++++
+#       JOBS ON THIS NODE
+#  =~=~=~=~=~=~=~=~=~=~=~=~=~=~
+# JOB   USER                 TASK                                   ETA     ATQ   GPU
+#      1  will   testing                                            17:23   25    y 
 
 ######################~~VARIABLES~~##############################
-TASKDIR=~/bin/task-testing/
+TASKDIR=~/bin/task-testing
 TASKPATH=$TASKDIR/.task_list
 COMPLETED=$TASKDIR/.completed_list
-
+TASKCONFIG=$TASKDIR/.task.conf
 
 # new-user init:
 if [ ! -f "$TASKPATH" ]; then
    setup
    auto_complete
    echo "establishing default setup and storing tasks in ${TASKPATH}"
-   echo ""
    echo "try task -h for usage and syntax"
 fi
 
@@ -42,31 +35,39 @@ setup() {
 #define file locations and paths
 mkdir ${TASKDIR}
 touch ${TASKPATH}
+touch ${TASKCONFIG}
 echo "this software uses the package 'at' - please ensure it is installed/enabled to allow reminders"
+echo "Will create reminders in queue 'T' - set this value manually if you wish with 'task setup"
+echo "Taskconfig settings for task script written/maintained by Will Russell/Scotchman0" >> $TASKCONFIG
+echo "The following variables can be set to modify base behavior" >> $TASKCONFIG
+echo "QUEUE=T #define defult atq for jobs relating to task" >> $TASKCONFIG
 }
 
 
-#OLD SINGLE-USER CONFIG SETUP BLOCK [removed]
-# auto_complete() {
-#   # #would you like to enable tab completion?
-# echo "would you like to have tasks added to your ~/.*shrc profile to print list when you start a new shell?"
-# echo "y|N"
-# read option
-# case $option in
-#   y|Y) clear
-#     echo "echo ## REMINDERS ##" >> ~/.*shrc
-#     echo "cat ~/.task_list" >> ~/.*shrc
-#     echo "cat command added to your ~/.*shrc file to read contents from ~/.task_list"
-#     ;;
-#   n|N) clear
-#     echo "no configuration changes made - tasks are managed in ~/.task_list"
-#     ;;
-#   *) echo "non y/n answer recieved, defaulting to no change"
-#     ;;
-# esac
-#}
+auto_complete() {
+# Add tasks printout to new-shell start:
+echo "would you like to have tasks added to your ~/.*shrc profile to print list when you start a new shell?"
+echo "y|N"
+read option
+case $option in
+  y|Y) clear
+    echo "echo ## REMINDERS ##" >> ~/.*shrc
+    echo "cat $TASKPATH" >> ~/.*shrc
+    echo "cat command added to your ~/.*shrc file to read contents from ~/.task_list"
+    ;;
+  n|N) clear
+    echo "no configuration changes made"
+    echo "to add tasks to your shell at startup later, run: echo 'cat $TASKPATH' >> ~/.*shrc"
+    ;;
+  *) clear
+     echo "non y/n answer recieved, defaulting to no change"
+     echo "to add tasks to your shell at startup later, run: echo 'cat $TASKPATH' >> ~/.*shrc"
+    ;;
+esac
+}
 
 
+#Alert function for managing atq entries
 alert() {
 	if [[ ETA == NONE ]]
   then
@@ -78,20 +79,29 @@ alert() {
     #placement of custom 'T' task queue to keep things unified -- Note, select EITHER Wall echo or
     # notify-send from echo options below, there is currently only one atq value for jobs
     #echo "notify-send 'node job has completed: $REMINDER'" | at $ETA
-    echo "wall 'node job has completed: $REMINDER' | tee >> $COMPLETED" | at -q T $ETA 
-    AT_QUEUE=$(atq -q T | tail -n 1 | awk {'print $1'})
+    echo "wall 'node job has completed: $REMINDER' | tee >> $COMPLETED" | at -q $QUEUE $ETA 
+    AT_QUEUE=$(atq -q ${QUEUE} | tail -n 1 | awk {'print $1'})
   fi
 }
 
+#When called, remove the atq entry for the value defined by '-d' function
 alert_remove(){
-  echo "$ENTRY is going to be purged from atq"
   atrm ${ENTRY}
 }
 
+#When called, remove all atq entries in '-q $QUEUE' to avoid interfering with existing ATQ jobs
+# use 'task setup' to modify queue selection
 alert_remove_all (){
-  #purge all atq -T entries
-  for x in $(atq -q T | awk {'print $1'}); do atrm $x; done
+  #purge all atq $(QUEUE) entries (default 'T')
+  for x in $(atq -q ${QUEUE} | awk {'print $1'}); do atrm $x; done
 }
+
+
+########################################################################################
+#~#~#~#~#~#~#~#~#~#~#~#~#~#~#~#~START OF SCRIPT LOGIC~#~#~#~#~#~#~#~#~#~#~#~#~#~#~#~~#~#
+
+#source the config file
+. ${TASKCONFIG}
 
 #primary action block:
 while test $# -gt -1; do #general while loop to lock behavior surrounding case options. 
@@ -117,11 +127,15 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
           fi
           echo "Uses GPU? (Y/N)"
           read GPU
-        echo "${USER} | $@ | $ETA | $AT_QUEUE | $GPU" >> ${TASKPATH}
+        echo "${USER} | $@ | $ETA | +$AT_QUEUE | $GPU" >> ${TASKPATH}
 
         else
           "null"
         fi
+      break
+      ;;
+    setup) #calls a default editor to modify the config using default editor selection
+      $EDITOR $TASKCONFIG
       break
       ;;
     -h|help)
@@ -137,21 +151,28 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
       ;;
     -d|--delete|--done) #delete line entry by number
       cat -n ${TASKPATH}
-      echo "do you wish to delete task entry $@? Y|n - will also delete wall echo alert"
+      echo "do you wish to delete task entry $@? Y|n - will also delete at queue entry"
       read reply
       case $reply in
         y|Y) ## NEED TO INCLUDE A CHECK THAT IF ENTRY=0 THEN SKIP ALERT_REMOVE
           shift
+          #define the line entry you are deleting as a variable to be removed
           DLINE="$@"
-          ENTRY=$(cat -n $TASKPATH | grep ${DLINE} | awk {'print $8'})
+          #find the associated ATQ entry for the dline entry, to then call alert_removal
+          ENTRY=$(cat -n $TASKPATH | grep ${DLINE} | grep '+##'
+            #cut -d "=" -f2 <<< "$your_str"#
+            #...| awk 'BEGIN { FS = "|" } {'printf %-5s\n, $8'})') #removed
+          #use sed to overwrite/remove the entry/clear task
           sed -i "${DLINE}d" $TASKPATH
           echo "deleted!"
+          # call atq removal:
           alert_remove
-          ;;
-        n|N)
+          break
+            ;;
+        n|N) 
           echo "cancelled delete"
           exit 1
-          ;;
+            ;;
         *)
           echo "non y/n answer provided, no change"
           exit 0
@@ -166,8 +187,10 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
          y|Y)
            shift
            echo "removing all reminders"
+          #easiest to just nuke the file and re-init if you want them all gone
            rm $TASKPATH
            touch $TASKPATH
+           # call atq cleanup:
            alert_remove_all
            ;;
          n|N)
@@ -187,11 +210,10 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
         echo " =~=~=~=~=~=~=~=~=~=~=~=~=~=~"
         #echo "JOB USER TASK ETA ATQ GPU" | awk '{ printf "%-5s %-20s %-38s %-15s %-2s\n", $1, $2, $3, $4, $5}' #default
         #cat -n ${TASKPATH} | awk 'BEGIN { FS = "|" };{ printf "%-1s %-50s %-15s %-10s\n", $1, $2, $3, $4, $5}' #default
-        echo "JOB USER TASK ETA ATQ GPU" | awk '{ printf "%-5s %-20s %-38s %-7s %-5s %-2s\n", $1, $2, $3, $4, $5, $6}' #test
-        cat -n ${TASKPATH} | awk 'BEGIN { FS = "|" };{ printf "%-1s %-50s %-5s %-5s %-8s\n", $1, $2, $3, $4, $5, $6}' #test
+        echo "JOB USER TASK ETA ATQ GPU" | awk '{ printf "%-7s %-20s %-36s %-7s %-5s %-2s\n", $1, $2, $3, $4, $5, $6}' #test
+        cat -n ${TASKPATH} | awk 'BEGIN { FS = "|" };{ printf "%-1s %-50s %-6s %-5s %-8s\n", $1, $2, $3, $4, $5, $6}' #test
         break
 		;;
   esac
 done
 exit 0
-   
