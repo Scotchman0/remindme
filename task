@@ -94,15 +94,15 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
     -n|--new) #new-task entry baseline (TESTING WITH FUNCTION BLOCK)
       shift
       #define default values for update entry
-      ETA=$(date | TIME_ESTIMATE )
+      ETA=$(date -d +'${TIME_ESTIMATE}' h )
       GPU="No"
       USER=$(whoami)
         if test $# -gt 0; then
-          echo "add ETA (defaults to none)"
-          read TIME_ESTIMATE
+          echo "add estimated hours as an integer"
+          read ETA
           echo "Uses GPU? (Y/N)"
           read GPU
-        echo "${USER} $@ $ETA $GPU" >> ${TASKPATH}
+        echo "${USER} | $@ | $ETA | $GPU" >> ${TASKPATH}
         else
           "null"
         fi
@@ -237,10 +237,11 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
         echo " ++++++++++++++++++++++++++++"
         echo "      JOBS ON THIS NODE"
         echo " =~=~=~=~=~=~=~=~=~=~=~=~=~=~"
-        echo "    JOB USER TASK ETA GPU" | awk '{ printf "%-5s %-10s %-15s %-20s %-22s\n", $1, $2, $3, $4, $5}'
-        cat -n ${TASKPATH} | awk '{ printf "%-5s %-10s %-15s %-20s %-22s\n", $1, $2, $3, $4, $5}'
+        echo "JOB USER TASK ETA GPU" | awk '{ printf "%-5s %-10s %-25s %-5s %-2s\n", $1, $2, $3, $4, $5}'
+        cat -n ${TASKPATH} | awk 'BEGIN { FS = "|" };{ printf "%-1s %-30s %-5s %-10s\n", $1, $2, $3, $4, $5}'
 		   break
 		;;
   esac
 done
 exit 0
+   
