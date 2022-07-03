@@ -75,13 +75,14 @@ alert() {
   else
     #echo "notify-send 'node job has completed: $REMINDER'" | at $ETA
     #placement of custom 'T' task queue to keep things unified
-    echo "wall 'node job has completed: $REMINDER'" | at $ETA -q T
-    AT_QUEUE=$(atq -q T | wc -l)
+    echo "wall 'node job has completed: $REMINDER'" | at -q T $ETA 
+    AT_QUEUE=$(atq -q T | tail -n 1 | awk {'print $1'})
   fi
 }
 
 alert_remove(){
-  echo "holding"
+  echo "$ENTRY is going to be purged from atq"
+  atrm ${ENTRY}
 }
 
 #primary action block:
@@ -105,7 +106,7 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
               alert
             else
               ETA=NONE
-              AT_QUEUE=Null
+              AT_QUEUE=""
           fi
           echo "Uses GPU? (Y/N)"
           read GPU
@@ -191,9 +192,10 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
         y|Y)
           shift
           DLINE="$@"
-          cat -n ./.task_list | awk {'print $1'} grep '$DLINE' | awk {'print $8'}
+          ENTRY=$(cat -n $TASKPATH | grep ${DLINE} | awk {'print $8'})
           sed -i "${DLINE}d" $TASKPATH
           echo "deleted!"
+          alert_remove
           ;;
         n|N)
           echo "cancelled delete"
