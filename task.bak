@@ -1,0 +1,199 @@
+#!/bin/bash
+#CLI reminder toolkit for alerts/terminal headers and more
+#Written by Will Russell/Scotchman0
+#patch update: 6/28/22
+#Version 0.5 (teams update)
+
+#################################################################################
+
+#Define actions desired:
+#because we want to have an 'echo to the top of your new cli instance' feature
+#We need to define a file to source:
+#CLI BANNER REMINDERS:
+# - a text file location that gets written to by the remindme command
+# - this text file is sourced by ~/.bashrc or ~/.zshrc
+# - setup must ask to echo the source command: $ echo "echo ~/.remindme/banner_reminders" >> ~/.bashrc
+
+#ALERTS TRIGGERED VIA CRON SCHEDULING
+# - a text file location that gets written to by the remindme command: ~/.remindme/alert_reminders
+# - each entry is handled by entry number tied to a cronscript maybe?
+# - example entry format: $ remindme @1:00pm "Gotta buy socks"
+#   - alert_reminders gets an entry "gotta buy socks" and a unique string identifier --> 30932 "gotta buy socks"
+#   - cronjob task is started, that triggers an alert echo of the entry tied to the unique id maybe.
+# Might could/should explore using 'at' command for this, if can tie into the functionality. 
+# desire pop-up alerts in alerts-manager - also 'wall' commands
+
+#Features that would be nice to have: 
+# inclusion of some repeating reminders
+# example: $ remindme @1:00pm "Gotta buy socks" --repeat daily|weekly|monthly|custom
+# if you tag custom, it asks for cron measurements: 5 * * 1 * with a print out of examples
+
+
+
+
+######################~~VARIABLES~~##############################
+TASKPATH=~/.task_list
+COMPLETED=~/.task_list_completed
+
+
+####################################~~FUNCTION BLOCKS~~########################
+setup() {
+#run only if ~/.remindme.conf does not exist - see firstrun block
+#define file locations and paths
+touch ${TASKPATH}
+}
+
+auto_complete() {
+  # #would you like to enable tab completion?
+echo "would you like to have tasks added to your ~/.*shrc profile to print list when you start a new shell?"
+echo "y|N"
+read option
+case $option in
+  y|Y) clear
+    echo "echo ## REMINDERS ##" >> ~/.*shrc
+    echo "cat ~/.task_list" >> ~/.*shrc
+    echo "cat command added to your ~/.*shrc file to read contents from ~/.task_list"
+    ;;
+  n|N) clear
+    echo "no configuration changes made - tasks are managed in ~/.task_list"
+    ;;
+  *) echo "non y/n answer recieved, defaulting to no change"
+    ;;
+esac
+}
+
+
+alert() {
+  notify-send REMINDER $reminder_
+}
+
+date_reminder() {
+  echo "now adding an alert to reminder entry $TARGET"
+}
+
+timer_reminder() {
+  echo "now adding a timer to task entry $TARGET"
+}
+
+remove_reminder() {
+echo emptystring
+}
+
+if [ ! -f "$TASKPATH" ]; then
+   setup
+   auto_complete
+   echo "establishing default settings in ~/.notes.conf and creating default save directory in ~/my-notes"
+   echo ""
+   echo "try task -h or task -n 'buy groceries' for getting started"
+fi
+
+#primary action block:
+while test $# -gt -1; do #general while loop to lock behavior surrounding case options. 
+  case "$1" in
+    -h|help)
+      shift
+      echo "#######  task help #######"
+      echo "command usage: $ task <option> <string>"
+      echo "task -h|help: print this breif help"
+      echo "task -n|new: create new reminder entry --> $ task -n 'buy eggs'"
+      echo "task -d|delete: delete line entry by number... ex: 'task -d 3'"
+      echo "task -c|clear: purge all reminders from list"
+      echo "task -r|reminder: set a date or a timer for a task alert..."
+      break
+      ;;
+    -r|reminder) #create an alert attached to existing line entry
+      shift
+      TARGET="$@"
+      echo now adding a reminder for task number: $TARGET
+      sed -n "${TARGET}p" $TASKPATH
+      echo "would you like to set a date/time or set a timer? (D|date,T|timer)"
+      read response
+      case $response in
+        D|d|date|Date) #setting a date/time
+          shift
+          date_reminder
+          ;;
+        T|t|timer|Time|time|Timer) #setting a timer
+          shift
+          timer_reminder
+          ;;
+        esac
+        break
+        ;;
+    -n|new) #create new note or edit existing note (*if specify exact note name)
+      shift
+      if test $# -gt 0; then
+        echo $@ >> ${TASKPATH}
+              else
+        echo "reminder cannot be empty string"
+      fi
+      break
+      ;;
+    -d|delete) #delete line entry by number
+      cat -n ${TASKPATH}
+      echo "do you wish to delete line entry $@? Y|n"
+      read reply
+      case $reply in
+        y|Y)
+          shift
+          DLINE="$@"
+          sed -i "${DLINE}d" $TASKPATH
+          echo "deleted!"
+          ;;
+        n|N)
+          echo "cancelled delete"
+          exit 1
+          ;;
+        esac
+        break
+        ;;
+    -c|complete) # move completed tasks to secondary store file
+       cat -n ${TASKPATH}
+       echo "Do you wish to mark line entry $@ completed? Y|n"
+       read reply
+       case reply in 
+        y|Y)
+          #shift
+          DLINE="$@"
+          cat -n ${TASKPATH} | grep $@
+          #sed -i "${DLINE}d" $TASKPATH
+          #echo "task completed! review completed tasks with 'task -a'"
+          ;;
+         n|N)
+          #echo "cancelled change"
+          exit 1
+          ;;
+       esac
+       break
+       ;;
+    -a|all) #display all tasks, open and completed
+       echo "hold"
+      ;;
+    -C|clear) # remove all reminders
+       echo "do you wish to purge all task entries? (note, will purge both active and completed entries) y/N"
+       read reply
+       case $reply in
+         y|Y)
+           shift
+           echo "removing all reminders"
+           rm $TASKPATH
+           touch $TASKPATH
+           rm $COMPLETED
+           touch $COMPLETED
+           ;;
+         n|N)
+           echo "cancelled delete"
+           exit 1
+           ;;
+         esac
+         break
+         ;;
+    *) #no option default
+       echo "##--task-list--##"
+       echo "all active tasks: use -h for more options"
+       cat -n ${TASKPATH}
+       break
+    ;;
+  esac
+done
+exit 0

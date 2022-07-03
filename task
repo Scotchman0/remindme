@@ -1,65 +1,67 @@
 #!/bin/bash
 #CLI reminder toolkit for alerts/terminal headers and more
 #Written by Will Russell/Scotchman0
-#9/15/21
-#Version 0.1
+#patch update: 6/28/22
+#DEVELOP BRANCH TO BECOME NEW FORK FOR JOB MANAGEMENT ON NODES + SHARED WORKLOAD MANAGEMENT
 
 #################################################################################
 
-#Define actions desired:
-#because we want to have an 'echo to the top of your new cli instance' feature
-#We need to define a file to source:
-#CLI BANNER REMINDERS:
-# - a text file location that gets written to by the remindme command
-# - this text file is sourced by ~/.bashrc or ~/.zshrc
-# - setup must ask to echo the source command: $ echo "echo ~/.remindme/banner_reminders" >> ~/.bashrc
+# desired layout template:
 
-#ALERTS TRIGGERED VIA CRON SCHEDULING
-# - a text file location that gets written to by the remindme command: ~/.remindme/alert_reminders
-# - each entry is handled by entry number tied to a cronscript maybe?
-# - example entry format: $ remindme @1:00pm "Gotta buy socks"
-#   - alert_reminders gets an entry "gotta buy socks" and a unique string identifier --> 30932 "gotta buy socks"
-#   - cronjob task is started, that triggers an alert echo of the entry tied to the unique id maybe.
-# Might could/should explore using 'at' command for this, if can tie into the functionality. 
-# desire pop-up alerts in alerts-manager - also 'wall' commands
-
-#Features that would be nice to have: 
-# inclusion of some repeating reminders
-# example: $ remindme @1:00pm "Gotta buy socks" --repeat daily|weekly|monthly|custom
-# if you tag custom, it asks for cron measurements: 5 * * 1 * with a print out of examples
+# ++++++++++++++++++++++++++++
+# JOBS ON THIS NODE
+# =~=~=~=~=~=~=~=~=~=~=~=~=~=~
+# NAME               ETA                    GPU USE
+# yolo training     7-2-22 1430      yes
+# =~=~=~=~=~=~=~=~=~=~=~=~=~=~
 
 
-
+# desired use case:  task -n 'yolo training' --eta 40h --gpu 'yes'
 
 ######################~~VARIABLES~~##############################
-TASKPATH=~/.task_list
+TASKDIR=~/bin/task-testing/
+TASKPATH=$TASKDIR/.task_list
 
+
+# new-user init:
+if [ ! -f "$TASKPATH" ]; then
+   setup
+   #auto_complete ##REMOVED IN FORK
+   echo "establishing default setup and storing tasks in ${TASKPATH}"
+   echo ""
+   echo "try task -h for usage and syntax"
+fi
 
 ####################################~~FUNCTION BLOCKS~~########################
+
+
 setup() {
 #run only if ~/.remindme.conf does not exist - see firstrun block
 #define file locations and paths
+mkdir ${TASKDIR}
 touch ${TASKPATH}
 }
 
-auto_complete() {
-  # #would you like to enable tab completion?
-echo "would you like to have tasks added to your ~/.*shrc profile to print list when you start a new shell?"
-echo "y|N"
-read option
-case $option in
-  y|Y) clear
-    echo "echo ## REMINDERS ##" >> ~/.*shrc
-    echo "cat ~/.task_list" >> ~/.*shrc
-    echo "cat command added to your ~/.*shrc file to read contents from ~/.task_list"
-    ;;
-  n|N) clear
-    echo "no configuration changes made - tasks are managed in ~/.task_list"
-    ;;
-  *) echo "non y/n answer recieved, defaulting to no change"
-    ;;
-esac
-}
+
+#OLD SINGLE-USER CONFIG SETUP BLOCK [removed]
+# auto_complete() {
+#   # #would you like to enable tab completion?
+# echo "would you like to have tasks added to your ~/.*shrc profile to print list when you start a new shell?"
+# echo "y|N"
+# read option
+# case $option in
+#   y|Y) clear
+#     echo "echo ## REMINDERS ##" >> ~/.*shrc
+#     echo "cat ~/.task_list" >> ~/.*shrc
+#     echo "cat command added to your ~/.*shrc file to read contents from ~/.task_list"
+#     ;;
+#   n|N) clear
+#     echo "no configuration changes made - tasks are managed in ~/.task_list"
+#     ;;
+#   *) echo "non y/n answer recieved, defaulting to no change"
+#     ;;
+# esac
+#}
 
 
 alert() {
@@ -78,17 +80,34 @@ remove_reminder() {
 echo emptystring
 }
 
-if [ ! -f "$TASKPATH" ]; then
-   setup
-   auto_complete
-   echo "establishing default settings in ~/.notes.conf and creating default save directory in ~/my-notes"
-   echo ""
-   echo "try task -h or task -n 'buy groceries' for getting started"
-fi
+new_task() {
+echo emptystring
+#hold space for logical new-task entry
+}
+
+
+
 
 #primary action block:
 while test $# -gt -1; do #general while loop to lock behavior surrounding case options. 
   case "$1" in
+    -n|--new) #new-task entry baseline (TESTING WITH FUNCTION BLOCK)
+      shift
+      #define default values for update entry
+      ETA=$(date | TIME_ESTIMATE )
+      GPU="No"
+      USER=$(whoami)
+        if test $# -gt 0; then
+          echo "add ETA (defaults to none)"
+          read TIME_ESTIMATE
+          echo "Uses GPU? (Y/N)"
+          read GPU
+        echo "${USER} | $@ | $ETA | $GPU" >> ${TASKPATH}
+        else
+          "null"
+        fi
+      break
+      ;;
     -h|help)
       shift
       echo "#######  task help #######"
@@ -100,35 +119,64 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
       echo "task -r|reminder: set a date or a timer for a task alert..."
       break
       ;;
-    -r|reminder) #create an alert attached to existing line entry
-      shift
-      TARGET="$@"
-      echo now adding a reminder for task number: $TARGET
-      sed -n "${TARGET}p" $TASKPATH
-      echo "would you like to set a date/time or set a timer? (D|date,T|timer)"
-      read response
-      case $response in
-        D|d|date|Date) #setting a date/time
-          shift
-          date_reminder
-          ;;
-        T|t|timer|Time|time|Timer) #setting a timer
-          shift
-          timer_reminder
-          ;;
-        esac
-        break
-        ;;
-  	-n|new) #create new note or edit existing note (*if specify exact note name)
-      shift
-      if test $# -gt 0; then
-        echo $@ >> ${TASKPATH}
-              else
-        echo "reminder cannot be empty string"
-      fi
-      break
-      ;;
-    -d|delete) #delete line entry by number
+    # -e|--eta) #create an alert attached to existing line entry
+    #   shift
+    #   TARGET="$@"
+    #   echo now adding a reminder for task number: $TARGET
+    #   sed -n "${TARGET}p" $TASKPATH
+    #   echo "would you like to set a date/time or set a timer? (D|date,T|timer)"
+    #   read response
+    #   case $response in
+    #     D|d|date|Date) #setting a date/time
+    #       shift
+    #       date_reminder
+    #       ;;
+    #     T|t|timer|Time|time|Timer) #setting a timer
+    #       shift
+    #       timer_reminder
+    #       ;;
+    #     esac
+    #     break
+    #     ;;
+    #ORIGINAL -n new-task block:
+  	# -n|--new) #create new note or edit existing note (*if specify exact note name)
+   #    shift
+   #    if getopts $# -gt 0; then
+   #      echo "$whoami | $@ | $ETA | $GPU >> ${TASKPATH}"
+   #    else
+   #      echo "job description cannot be empty string"
+   #    fi
+   #    break
+   #    ;;
+
+# LOGIC DESCRIBE:
+#- Case loop after N should trigger a FUNCTION, and in that function will be sub-case effects
+#- In this way, every '-n' will go to "new_task()" which then will loop through ETA and GPU y/n
+
+
+
+   #UPDATED/TESTING -n new-task block:
+    # -n|--new) #new-task entry baseline
+    #   shift
+    #   #define default values for update entry
+    #   ETA=$(date | TIME_ESTIMATE )
+    #   GPU="No"
+    #   USER=$(whoami)
+    #     if test $# -gt 0; then
+    #       echo "add ETA (defaults to none)"
+    #       read TIME_ESTIMATE
+    #       echo "Uses GPU? (Y/N)"
+    #       read GPU
+    #     echo "${USER} | $@ | $ETA | $GPU" >> ${TASKPATH}
+    #     else
+    #       "null"
+    #     fi
+    #   break
+    #   ;;
+
+    
+
+    -d|--delete) #delete line entry by number
       cat -n ${TASKPATH}
       echo "do you wish to delete line entry $@? Y|n"
       read reply
@@ -146,7 +194,29 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
         esac
         break
         ;;
-    -c|clear) # remove all reminders
+    # -c|complete) # move completed tasks to secondary store file ##NOT FUNCTIONAL PRESENTLY
+    #    cat -n ${TASKPATH}
+    #    echo "Do you wish to mark line entry $@ completed? Y|n"
+    #    read reply
+    #    case reply in 
+    #     y|Y)
+    #       #shift
+    #       DLINE="$@"
+    #       cat -n ${TASKPATH} | grep $@
+    #       #sed -i "${DLINE}d" $TASKPATH
+    #       #echo "task completed! review completed tasks with 'task -a'"
+    #       ;;
+    #      n|N)
+    #       #echo "cancelled change"
+    #       exit 1
+    #       ;;
+    #    esac
+    #    break
+    #    ;;
+    # -a|all) #display all tasks, open and completed
+    #    echo "hold"
+    #   ;;
+    -C|--clear) # purge all reminders
        echo "do you wish to purge all task entries?"
        read reply
        case $reply in
@@ -163,11 +233,13 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
          esac
          break
          ;;
-      *) #no option default
-        echo "##--task-list--##"
-        echo "all active tasks: use -h for more options"
+    *) #no option default
+        echo " ++++++++++++++++++++++++++++"
+        echo "      JOBS ON THIS NODE"
+        echo " =~=~=~=~=~=~=~=~=~=~=~=~=~=~"
+        echo "    JOB | USER | PROJECT | ETA | GPU USE"
         cat -n ${TASKPATH}
-		    break
+		   break
 		;;
   esac
 done
