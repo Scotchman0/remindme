@@ -85,8 +85,7 @@ alert() { ##currently the logic works, but doesn't entirely seem to want to exec
 
     #tried to implement a 'delete task atq job in the same line, but it can't handle it, so creating a second job:
     echo "sed -i '/$REMINDER/d' $TASKPATH" | at -q $QUEUE $ETA
-
-    
+    DEL_JOB=$(atq -q ${QUEUE} | tail -n 1 | awk {'print $1'})
   fi
 }
 
