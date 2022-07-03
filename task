@@ -4,6 +4,10 @@
 #Written by Will Russell/Scotchman0
 #patch update: 7/3/22
 #DEVELOP BRANCH TO BECOME NEW FORK FOR JOB MANAGEMENT ON NODES + SHARED WORKLOAD MANAGEMENT
+#Version=1.0
+
+#In order to share access to the common task path, override the defaults set below in variables
+#With your own common target/desired dir, and ensure all users can view/edit contents of taskdir
 
 #################################################################################
 
@@ -14,35 +18,39 @@
 #      1  will   testing                                            17:23   25    y 
 
 ######################~~VARIABLES~~##############################
-TASKDIR=~/bin/task-testing
-TASKPATH=$TASKDIR/.task_list
-COMPLETED=$TASKDIR/.completed_list
-TASKCONFIG=$TASKDIR/.task.conf
+TASKDIR=~/task-app
+TASKPATH=$TASKDIR/tasks
+TASKCONFIG=$TASKDIR/task.conf
 
-# new-user init:
-if [ ! -f "$TASKPATH" ]; then
-   setup
-   auto_complete
-   echo "establishing default setup and storing tasks in ${TASKPATH}"
-   echo "try task -h for usage and syntax"
-fi
 
 ####################################~~FUNCTION BLOCKS~~########################
 
 
 setup() {
-#run only if ~/.remindme.conf does not exist - see firstrun block
+#run only if $TASKCONFIG does not exist - see firstrun block
 #define file locations and paths
 mkdir ${TASKDIR}
 touch ${TASKPATH}
 touch ${TASKCONFIG}
 echo "this software uses the package 'at' - please ensure it is installed/enabled to allow reminders"
 echo "Will create reminders in queue 'T' - set this value manually if you wish with 'task setup"
-echo "Taskconfig settings for task script written/maintained by Will Russell/Scotchman0" >> $TASKCONFIG
-echo "The following variables can be set to modify base behavior" >> $TASKCONFIG
+echo "#Taskconfig settings for task script written/maintained by Will Russell/Scotchman0" >> $TASKCONFIG
+echo "#The following variables can be set to modify base behavior" >> $TASKCONFIG
 echo "QUEUE=T #define defult atq for jobs relating to task" >> $TASKCONFIG
+echo "LOGPATH=$TASKDIR/tasks.log #define location for optional logging" >> $TASKCONFIG
+echo "ENABLE_LOGGING=false #toggle to true to log output to $LOGPATH" >> $TASKCONFIG
 }
 
+logging() {
+  #if logging is enabled, then dump all output into $LOGPATH
+  if [[ ENABLE_LOGGING=true ]]
+  then
+    2>&1 >> $LOGPATH
+  else
+    #set dummy variable to not fail else condition
+    ignored=true
+  fi
+}
 
 auto_complete() {
 # Add tasks printout to new-shell start:
@@ -50,16 +58,16 @@ echo "would you like to have tasks added to your ~/.*shrc profile to print list 
 echo "y|N"
 read option
 case $option in
-  y|Y) clear
+  y|Y) 
     echo "echo ## REMINDERS ##" >> ~/.*shrc
     echo "cat $TASKPATH" >> ~/.*shrc
     echo "cat command added to your ~/.*shrc file to read contents from ~/.task_list"
     ;;
-  n|N) clear
+  n|N) 
     echo "no configuration changes made"
     echo "to add tasks to your shell at startup later, run: echo 'cat $TASKPATH' >> ~/.*shrc"
     ;;
-  *) clear
+  *) 
      echo "non y/n answer recieved, defaulting to no change"
      echo "to add tasks to your shell at startup later, run: echo 'cat $TASKPATH' >> ~/.*shrc"
     ;;
@@ -79,7 +87,7 @@ alert() {
     #placement of custom 'T' task queue to keep things unified -- Note, select EITHER Wall echo or
     # notify-send from echo options below, there is currently only one atq value for jobs
     #echo "notify-send 'node job has completed: $REMINDER'" | at $ETA
-    echo "wall 'node job has completed: $REMINDER' | tee >> $COMPLETED" | at -q $QUEUE $ETA 
+    echo "wall 'node job has completed: $REMINDER'" | at -q $QUEUE $ETA 
     AT_QUEUE=$(atq -q ${QUEUE} | tail -n 1 | awk {'print $1'})
   fi
 }
@@ -96,6 +104,14 @@ alert_remove_all (){
   for x in $(atq -q ${QUEUE} | awk {'print $1'}); do atrm $x; done
 }
 
+
+#CHECK IF THIS IS THE FIRST TIME THIS PROGRAM HAS RUN, CONFIGURE DEFAULTS IF SO:
+if [ ! -f "$TASKCONFIG" ]; then
+   setup
+   auto_complete
+   echo "establishing default setup and storing tasks in ${TASKPATH}"
+   echo "try task -h for usage and syntax"
+fi
 
 ########################################################################################
 #~#~#~#~#~#~#~#~#~#~#~#~#~#~#~#~START OF SCRIPT LOGIC~#~#~#~#~#~#~#~#~#~#~#~#~#~#~#~~#~#
@@ -125,7 +141,7 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
               ETA=NONE
               AT_QUEUE="NONE"
           fi
-          echo "Uses GPU? (Y/N)"
+          echo "GPU in-use? (Y/N)"
           read GPU
         echo "${USER} | $@ | $ETA | +$AT_QUEUE+ | $GPU" >> ${TASKPATH}
 
@@ -144,9 +160,12 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
       echo "command usage: $ task <option> <string>"
       echo "task -h|help: print this breif help"
       echo "task -n|--new: create new reminder entry --> $ task -n 'buy eggs'"
+      echo "task -n has sub-options: ETA for reminders and a GPU in-use Y/N prompt"
       echo "task -d|--delete: delete line entry by number... ex: 'task -d 3'"
       echo "task -C|--clear: purge all reminders from list"
-      #echo "task -r|reminder: set a date or a timer for a task alert..."
+      echo ""
+      echo "currently, task does not support editing task entries except manually via $TASKPATH"
+      echo "you can/should delete and re-create entries if $TASKPATH editing is restricted"
       break
       ;;
     -d|--delete|--done) #delete line entry by number
