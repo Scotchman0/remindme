@@ -12,7 +12,7 @@
 # JOBS ON THIS NODE
 # =~=~=~=~=~=~=~=~=~=~=~=~=~=~
 # NAME               ETA                    GPU USE
-# yolo training     7-2-22 1430      yes
+# yolo training     7-2-22 1430               yes
 # =~=~=~=~=~=~=~=~=~=~=~=~=~=~
 
 
@@ -102,7 +102,7 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
           read TIME_ESTIMATE
           echo "Uses GPU? (Y/N)"
           read GPU
-        echo "${USER} | $@ | $ETA | $GPU" >> ${TASKPATH}
+        echo "${USER} $@ $ETA $GPU" >> ${TASKPATH}
         else
           "null"
         fi
@@ -233,12 +233,12 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
          esac
          break
          ;;
-    *) #no option default
+    *) #no option default -- print all tasks on node
         echo " ++++++++++++++++++++++++++++"
         echo "      JOBS ON THIS NODE"
         echo " =~=~=~=~=~=~=~=~=~=~=~=~=~=~"
-        echo "    JOB | USER | PROJECT | ETA | GPU USE"
-        cat -n ${TASKPATH}
+        echo "    JOB USER TASK ETA GPU" | awk '{ printf "%-5s %-10s %-15s %-20s %-22s\n", $1, $2, $3, $4, $5}'
+        cat -n ${TASKPATH} | awk '{ printf "%-5s %-10s %-15s %-20s %-22s\n", $1, $2, $3, $4, $5}'
 		   break
 		;;
   esac
