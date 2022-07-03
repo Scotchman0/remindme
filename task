@@ -94,12 +94,20 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
     -n|--new) #new-task entry baseline (TESTING WITH FUNCTION BLOCK)
       shift
       #define default values for update entry
-      ETA=$(date -d +'${TIME_ESTIMATE}' h )
+      #ETA=$(if [[ ${SETTIME} != 0 ]]; then $(echo $(date -d +${SETTIME}hours +%r)); else NONE; fi)
+      #ETA=$(echo $(date -d +${SETTIME}hours +%r))
+      #ETA=$(echo $(date -d +${SETTIME}hours +%r))
       GPU="No"
       USER=$(whoami)
         if test $# -gt 0; then
-          echo "add estimated hours as an integer"
-          read ETA
+          echo "add estimated hours as an integer, insert 0 for NONE"
+          read SETTIME
+          if [[ ${SETTIME} != 0 ]]
+            then
+              ETA=$(echo $(date -d +${SETTIME}hours +%r))
+            else
+              ETA=NONE
+          fi
           echo "Uses GPU? (Y/N)"
           read GPU
         echo "${USER} | $@ | $ETA | $GPU" >> ${TASKPATH}
@@ -113,10 +121,10 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
       echo "#######  task help #######"
       echo "command usage: $ task <option> <string>"
       echo "task -h|help: print this breif help"
-      echo "task -n|new: create new reminder entry --> $ task -n 'buy eggs'"
-      echo "task -d|delete: delete line entry by number... ex: 'task -d 3'"
-      echo "task -c|clear: purge all reminders from list"
-      echo "task -r|reminder: set a date or a timer for a task alert..."
+      echo "task -n|--new: create new reminder entry --> $ task -n 'buy eggs'"
+      echo "task -d|--delete: delete line entry by number... ex: 'task -d 3'"
+      echo "task -C|--clear: purge all reminders from list"
+      #echo "task -r|reminder: set a date or a timer for a task alert..."
       break
       ;;
     # -e|--eta) #create an alert attached to existing line entry
@@ -191,6 +199,10 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
           echo "cancelled delete"
           exit 1
           ;;
+        *)
+          echo "non y/n answer provided, no change"
+          exit 0
+          ;;
         esac
         break
         ;;
@@ -228,17 +240,21 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
            ;;
          n|N)
            echo "cancelled delete"
-           exit 1
+           exit 0
+           ;;
+         *)
+           echo "non y/n answer provided, no change"
+           exit 0
            ;;
          esac
          break
          ;;
-    *) #no option default -- print all tasks on node
+    *) #no option default -- print all tasks on node + formatting for column alignment (print on 'task' --noopts)
         echo " ++++++++++++++++++++++++++++"
         echo "      JOBS ON THIS NODE"
         echo " =~=~=~=~=~=~=~=~=~=~=~=~=~=~"
-        echo "JOB USER TASK ETA GPU" | awk '{ printf "%-5s %-10s %-25s %-5s %-2s\n", $1, $2, $3, $4, $5}'
-        cat -n ${TASKPATH} | awk 'BEGIN { FS = "|" };{ printf "%-1s %-30s %-5s %-10s\n", $1, $2, $3, $4, $5}'
+        echo "JOB USER TASK ETA GPU" | awk '{ printf "%-5s %-20s %-38s %-15s %-2s\n", $1, $2, $3, $4, $5}' #default
+        cat -n ${TASKPATH} | awk 'BEGIN { FS = "|" };{ printf "%-1s %-50s %-15s %-10s\n", $1, $2, $3, $4, $5}' #default
 		   break
 		;;
   esac
