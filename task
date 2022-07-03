@@ -74,8 +74,9 @@ alert() {
     exit 0
   else
     #echo "notify-send 'node job has completed: $REMINDER'" | at $ETA
-    echo "wall 'node job has completed: $REMINDER'" | at $ETA
-    AT_QUEUE=$(atq | wc -l)
+    #placement of custom 'T' task queue to keep things unified
+    echo "wall 'node job has completed: $REMINDER'" | at $ETA -q T
+    AT_QUEUE=$(atq -q T | wc -l)
   fi
 }
 
@@ -254,8 +255,8 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
         echo " =~=~=~=~=~=~=~=~=~=~=~=~=~=~"
         #echo "JOB USER TASK ETA ATQ GPU" | awk '{ printf "%-5s %-20s %-38s %-15s %-2s\n", $1, $2, $3, $4, $5}' #default
         #cat -n ${TASKPATH} | awk 'BEGIN { FS = "|" };{ printf "%-1s %-50s %-15s %-10s\n", $1, $2, $3, $4, $5}' #default
-        echo "JOB USER TASK ETA ATQ GPU" | awk '{ printf "%-5s %-20s %-38s %-15s %-5s %-2s\n", $1, $2, $3, $4, $5, $6}' #test
-        cat -n ${TASKPATH} | awk 'BEGIN { FS = "|" };{ printf "%-1s %-50s %-15s %-5s %-10s\n", $1, $2, $3, $4, $5, $6}' #test
+        echo "JOB USER TASK ETA ATQ GPU" | awk '{ printf "%-5s %-20s %-38s %-5s %-5s %-2s\n", $1, $2, $3, $4, $5, $6}' #test
+        cat -n ${TASKPATH} | awk 'BEGIN { FS = "|" };{ printf "%-1s %-50s %-5s %-5s %-10s\n", $1, $2, $3, $4, $5, $6}' #test
         break
 		;;
   esac
