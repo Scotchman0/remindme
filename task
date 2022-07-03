@@ -159,7 +159,7 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
           echo "Toggle indicator for GPU in-use: (Y/N)"
           read GPU
           #print the primary output to the $TASKPATH file once options set
-          echo "${USER} | $@ | $ETA | +$AT_QUEUE+ | $GPU" >> ${TASKPATH}
+          echo " $@ | $ETA | +$AT_QUEUE+ | $GPU | ${USER}" >> ${TASKPATH}
         else
           "null"
         fi
@@ -237,9 +237,9 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
         echo " =~=~=~=~=~=~=~=~=~=~=~=~=~=~"
         #echo "JOB USER TASK ETA ATQ GPU" | awk '{ printf "%-5s %-20s %-38s %-15s %-2s\n", $1, $2, $3, $4, $5}' #default
         #cat -n ${TASKPATH} | awk 'BEGIN { FS = "|" };{ printf "%-1s %-50s %-15s %-10s\n", $1, $2, $3, $4, $5}' #default
-        echo "JOB USER TASK ETA ATQ GPU" | awk '{ printf "%-7s %-20s %-36s %-7s %-5s %-2s\n", $1, $2, $3, $4, $5, $6}' #test
-        cat -n ${TASKPATH} | awk 'BEGIN { FS = "|" };{ printf "%-1s %-50s %-6s %-4s %-8s\n", $1, $2, $3, $4, $5, $6}' #test
-        break
+        echo "JOB TASK ETA ATQ GPU USER" | awk '{ printf "%-8s %-50s %-7s %-6s %-5s %-2s\n", $1, $2, $3, $4, $5, $6}' #test
+        cat -n ${TASKPATH} | awk 'BEGIN { FS = "|" };{ printf "%-57s %-5s %-5s %-5s %-8s\n", $1, $2, $3, $4, $5, $6}' #test
+        break #MOVE THE USER ENTRY TO THE END SO IT DOESN'T IMPACT THE LAYOUT
 		;;
   esac
 done
