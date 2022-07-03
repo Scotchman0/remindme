@@ -86,7 +86,7 @@ alert() {
 
 #When called, remove the atq entry for the value defined by '-d' function
 alert_remove(){
-  atrm ${ENTRY}
+  atrm ${ENTRY} &> /dev/null
 }
 
 #When called, remove all atq entries in '-q $QUEUE' to avoid interfering with existing ATQ jobs
@@ -123,7 +123,7 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
               alert
             else
               ETA=NONE
-              AT_QUEUE=""
+              AT_QUEUE="NONE"
           fi
           echo "Uses GPU? (Y/N)"
           read GPU
