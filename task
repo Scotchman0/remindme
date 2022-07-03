@@ -69,22 +69,27 @@ esac
 }
 
 
-#Alert function for managing atq entries
-alert() {
+alert() { ##currently the logic works, but doesn't entirely seem to want to execute/alert cleanup"
+  #Alert function for managing atq entries
 	if [[ ETA == NONE ]]
   then
-    #notify-send $REMINDER | at $ETA
-    #wall $REMINDER | at $ETA
-    sleep 1
+    "null" #null update so that logic completes withough complaining
     exit 0
   else
-    #placement of custom 'T' task queue to keep things unified -- Note, select EITHER Wall echo or
-    # notify-send from echo options below, there is currently only one atq value for jobs
-    #echo "notify-send 'node job has completed: $REMINDER'" | at $ETA
-    echo "wall 'node job has completed: $REMINDER'" | at -q $QUEUE $ETA 
+    #placement of custom 'T' task queue to keep things unified -- Note, select EITHER "wall echo" or
+    # "notify-send" from echo options below, there is currently only one atq value for jobs
+
+    echo "notify-send 'node job has completed: $REMINDER' " | at -q $QUEUE $ETA 
+    #echo "wall 'node job has completed: $REMINDER'" | at -q $QUEUE $ETA
     AT_QUEUE=$(atq -q ${QUEUE} | tail -n 1 | awk {'print $1'})
+
+    #tried to implement a 'delete task atq job in the same line, but it can't handle it, so creating a second job:
+    echo "sed -i '/$REMINDER/d' $TASKPATH" | at -q $QUEUE $ETA
+
+    
   fi
 }
+
 
 #When called, remove the atq entry for the value defined by '-d' function
 alert_remove(){
