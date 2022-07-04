@@ -137,8 +137,6 @@ fi
 #source the config file
 . ${TASKCONFIG}
 
-echo $GPU_TOGGLE
-
 #primary action block:
 while test $# -gt -1; do #general while loop to lock behavior surrounding case options. 
   case "$1" in
