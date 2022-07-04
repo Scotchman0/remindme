@@ -1,90 +1,143 @@
 #!/bin/bash
+#TASK - A CLI reminders and task management toolkit
 #CLI reminder toolkit for alerts/terminal headers and more
 #Written by Will Russell/Scotchman0
-#9/15/21
-#Version 0.1
+#patch update: 7/3/22
+#DEVELOP BRANCH TO BECOME NEW FORK FOR JOB MANAGEMENT ON NODES + SHARED WORKLOAD MANAGEMENT
+#Version=1.0
+
+#In order to share access to the common task path, override the defaults set below in variables
+#With your own common target/desired dir, and ensure all users can view/edit contents of taskdir
 
 #################################################################################
 
-#Define actions desired:
-#because we want to have an 'echo to the top of your new cli instance' feature
-#We need to define a file to source:
-#CLI BANNER REMINDERS:
-# - a text file location that gets written to by the remindme command
-# - this text file is sourced by ~/.bashrc or ~/.zshrc
-# - setup must ask to echo the source command: $ echo "echo ~/.remindme/banner_reminders" >> ~/.bashrc
+# EXAMPLE OUTPUT:
 
-#ALERTS TRIGGERED VIA CRON SCHEDULING
-# - a text file location that gets written to by the remindme command: ~/.remindme/alert_reminders
-# - each entry is handled by entry number tied to a cronscript maybe?
-# - example entry format: $ remindme @1:00pm "Gotta buy socks"
-#   - alert_reminders gets an entry "gotta buy socks" and a unique string identifier --> 30932 "gotta buy socks"
-#   - cronjob task is started, that triggers an alert echo of the entry tied to the unique id maybe.
-# Might could/should explore using 'at' command for this, if can tie into the functionality. 
-# desire pop-up alerts in alerts-manager - also 'wall' commands
-
-#Features that would be nice to have: 
-# inclusion of some repeating reminders
-# example: $ remindme @1:00pm "Gotta buy socks" --repeat daily|weekly|monthly|custom
-# if you tag custom, it asks for cron measurements: 5 * * 1 * with a print out of examples
-
-
-
+#  ++++++++++++++++++++++++++++
+#       JOBS ON THIS NODE
+#  =~=~=~=~=~=~=~=~=~=~=~=~=~=~
+# JOB     USER                 TASK                                 ETA     ATQ   GPU
+#      1  will   test                                               17:22   +35+   N      
+#      2  will   Long running inference project                     NONE   +NONE+   N  
 
 ######################~~VARIABLES~~##############################
-TASKPATH=~/.task_list
 
+TASKDIR=~/task-app
+TASKPATH=$TASKDIR/task_list
+TASKCONFIG=$TASKDIR/task.conf
 
 ####################################~~FUNCTION BLOCKS~~########################
+
+
 setup() {
-#run only if ~/.remindme.conf does not exist - see firstrun block
+#run only if $TASKCONFIG does not exist - see firstrun block
 #define file locations and paths
+mkdir ${TASKDIR}
 touch ${TASKPATH}
+touch ${TASKCONFIG}
+chmod 666 $TASKPATH
+echo "this software uses the package 'at' - please ensure it is installed/enabled to allow reminders"
+echo "Will create reminders in queue 'T' - set this value manually if you wish with 'task config"
+echo "#Taskconfig settings for task script written/maintained by Will Russell/Scotchman0" >> $TASKCONFIG
+echo "#The following variables can be set to modify base behavior" >> $TASKCONFIG
+echo "QUEUE=T #define defult atq for jobs relating to task" >> $TASKCONFIG
+echo "GPU_TOGGLE=true #sets option for 'GPU' column being gathered/watched in task- set to false to skip" >> $TASKCONFIG
+echo "NOTIFY=notify-send #options: 'notify-send', 'wall-echo', 'mail' --> set option on how atq will alert you" >> $TASKCONFIG
+echo "MAIL_RECIPIENTS='admin@example.com' #takes a comma-separated list of users, quoted: 'admin@example.com,admin2@example.com,..." >> $TASKCONFIG
+echo "#Note that 'NOTIFY' and 'MAIL_RECIPEINTS must both be set, and a mail-handler must be preconfigured">> $TASKCONFIG
 }
 
+
 auto_complete() {
-  # #would you like to enable tab completion?
+# Add tasks printout to new-shell start:
 echo "would you like to have tasks added to your ~/.*shrc profile to print list when you start a new shell?"
 echo "y|N"
 read option
 case $option in
-  y|Y) clear
+  y|Y) 
     echo "echo ## REMINDERS ##" >> ~/.*shrc
-    echo "cat ~/.task_list" >> ~/.*shrc
+    echo "cat $TASKPATH" >> ~/.*shrc
     echo "cat command added to your ~/.*shrc file to read contents from ~/.task_list"
     ;;
-  n|N) clear
-    echo "no configuration changes made - tasks are managed in ~/.task_list"
+  n|N) 
+    echo "no configuration changes made"
+    echo "to add tasks to your shell at startup later, run: echo 'cat $TASKPATH' >> ~/.*shrc"
     ;;
-  *) echo "non y/n answer recieved, defaulting to no change"
+  *) 
+     echo "non y/n answer recieved, defaulting to no change"
+     echo "to add tasks to your shell at startup later, run: echo 'cat $TASKPATH' >> ~/.*shrc"
     ;;
 esac
 }
 
 
-alert() {
-	notify-send REMINDER $reminder_
+alert() { ##currently the logic works, but doesn't entirely seem to want to execute/alert cleanup"
+  #Alert function for managing atq entries
+	if [[ ETA == NONE ]]
+  then
+    "null" #null update so that logic completes withough complaining
+    exit 0
+  else
+    #placement of custom 'T' task queue to keep things unified:
+    echo "TEST"
+    if [[ "$NOTIFY" = notify-send ]]
+      then
+        echo "notify-send 'node job has completed: $REMINDER' " | at -q $QUEUE $ETA
+        AT_QUEUE=$(atq -q ${QUEUE} | tail -n 1 | awk {'print $1'})
+    elif [[ "$NOTIFY" = wall-echo ]]
+      then
+        echo "wall 'node job has completed: $REMINDER'" | at -q $QUEUE $ETA
+        AT_QUEUE=$(atq -q ${QUEUE} | tail -n 1 | awk {'print $1'})
+    elif [[ "$NOTIFY" = mail ]]
+      then
+        echo "mail -s 'node job has completed: $REMINDER' $MAIL_RECIPIENTS" | at -q $QUEUE $ETA
+        AT_QUEUE=$(atq -q ${QUEUE} | tail -n 1 | awk {'print $1'})
+    else
+      echo "'task config' option NOTIFY not defined, defaulting to notify-send"
+      echo "notify-send 'node job has completed: $REMINDER' " | at -q $QUEUE $ETA 
+      AT_QUEUE=$(atq -q ${QUEUE} | tail -n 1 | awk {'print $1'})
+    fi
+
+
+    # echo "notify-send 'node job has completed: $REMINDER' " | at -q $QUEUE $ETA 
+    # #echo "wall 'node job has completed: $REMINDER'" | at -q $QUEUE $ETA
+    # AT_QUEUE=$(atq -q ${QUEUE} | tail -n 1 | awk {'print $1'})
+
+    #tried to implement a 'delete task atq job in the same line, but it can't handle it, so creating a second job:
+    echo "sed -i '/$REMINDER/d' $TASKPATH" | at -q $QUEUE $ETA
+    DEL_JOB=$(atq -q ${QUEUE} | tail -n 1 | awk {'print $1'})
+  fi
 }
 
-date_reminder() {
-	echo "now adding an alert to reminder entry $TARGET"
+
+#When called, remove the atq entry for the value defined by '-d' function
+alert_remove(){
+  atrm ${ENTRY} &> /dev/null
 }
 
-timer_reminder() {
-  echo "now adding a timer to task entry $TARGET"
+#When called, remove all atq entries in '-q $QUEUE' to avoid interfering with existing ATQ jobs
+# use 'task setup' to modify queue selection
+alert_remove_all (){
+  #purge all atq $(QUEUE) entries (default 'T')
+  for x in $(atq -q ${QUEUE} | awk {'print $1'}); do atrm $x; done
 }
 
-remove_reminder() {
-echo emptystring
-}
 
-if [ ! -f "$TASKPATH" ]; then
+#CHECK IF THIS IS THE FIRST TIME THIS PROGRAM HAS RUN, CONFIGURE DEFAULTS IF SO:
+if [ ! -f "$TASKCONFIG" ]; then
+   echo "establishing default setup and storing tasks in ${TASKPATH}"
    setup
    auto_complete
-   echo "establishing default settings in ~/.notes.conf and creating default save directory in ~/my-notes"
-   echo ""
-   echo "try task -h or task -n 'buy groceries' for getting started"
+   echo "try task -h for usage and syntax"
 fi
+
+########################################################################################
+#~#~#~#~#~#~#~#~#~#~#~#~#~#~#~#~START OF SCRIPT LOGIC~#~#~#~#~#~#~#~#~#~#~#~#~#~#~#~~#~#
+
+#source the config file
+. ${TASKCONFIG}
+
+echo $GPU_TOGGLE
 
 #primary action block:
 while test $# -gt -1; do #general while loop to lock behavior surrounding case options. 
@@ -93,81 +146,147 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
       shift
       echo "#######  task help #######"
       echo "command usage: $ task <option> <string>"
-      echo "task -h|help: print this breif help"
-      echo "task -n|new: create new reminder entry --> $ task -n 'buy eggs'"
-      echo "task -d|delete: delete line entry by number... ex: 'task -d 3'"
-      echo "task -c|clear: purge all reminders from list"
-      echo "task -r|reminder: set a date or a timer for a task alert..."
+      echo ""
+      echo " -h|help: print this brief help"
+      echo " -n|--new: create new reminder entry --> $ task -n 'buy eggs'"
+      echo " >>> '-n' has follow-up prompts: ETA for reminders and a GPU in-use Y/N prompt"
+      echo " -d|--delete: delete line entry by number... ex: 'task -d 3'"
+      echo " -C|--clear: purge all reminders from list"
+      echo " config: open an editor and modify the config file to set options"
+      echo " edit: opens an editor to modify the raw task file to modify entries manually"
+      echo ""
+      echo "description of task columns:"
+      echo ""
+      echo "   JOB       |     TASK      |  ETA   |       ATQ         |  GPU  | USER"
+      echo "<job number> | <description> | <time> | <reminder number> | <Y/N> | <username>"
+      echo ""
+      echo "JOB      TASK                                          ETA     ATQ    GPU   USER"
+      echo "1   This is an example task                            20:59   +64+   Y     will"
+      echo "2   Docker training in progress                        NONE   +NONE+   N    john"
+      echo "#######  task help #######"
       break
       ;;
-    -r|reminder) #create an alert attached to existing line entry
+    -n|--new) #new-task entry baseline (TESTING WITH FUNCTION BLOCK)
       shift
-      TARGET="$@"
-      echo now adding a reminder for task number: $TARGET
-      sed -n "${TARGET}p" $TASKPATH
-      echo "would you like to set a date/time or set a timer? (D|date,T|timer)"
-      read response
-      case $response in
-        D|d|date|Date) #setting a date/time
-          shift
-          date_reminder
-          ;;
-        T|t|timer|Time|time|Timer) #setting a timer
-          shift
-          timer_reminder
-          ;;
-        esac
-        break
-        ;;
-  	-n|new) #create new note or edit existing note (*if specify exact note name)
-      shift
-      if test $# -gt 0; then
-        echo $@ >> ${TASKPATH}
-              else
-        echo "reminder cannot be empty string"
-      fi
+      #Default value setting of variables
+      GPU="N"
+      USER=$(whoami)
+      # logical call set for 'task was submitted, and has a value after -n of length longer than 0'
+        if test $# -gt 0; then
+          #set the task as a value for use with AT
+          REMINDER=$@
+          echo "Set ETA value as integer in hours, insert 0 for none"
+          read SETTIME
+          if [[ ${SETTIME} != 0 ]]
+            then
+              ETA=$(echo $(date -d +${SETTIME}hours +%H:%M))
+              alert
+            else
+              ETA=NONE
+              AT_QUEUE="NONE"
+          fi
+          if [[ "$GPU_TOGGLE" = true ]]
+          then
+            echo "Toggle indicator for GPU in-use: (Y/N)"
+            read GPU
+            #print the primary output to the $TASKPATH file once options set
+            echo " $@ | $ETA | +$AT_QUEUE+ | $GPU | ${USER}" >> ${TASKPATH}
+          else 
+          #print the primary output to the $TASKPATH file once options set
+          echo " $@ | $ETA | +$AT_QUEUE+ | ${USER}" >> ${TASKPATH}
+          fi
+          # #print the primary output to the $TASKPATH file once options set
+          # echo " $@ | $ETA | +$AT_QUEUE+ | $GPU | ${USER}" >> ${TASKPATH}
+        else
+          "null"
+        fi
       break
       ;;
-    -d|delete) #delete line entry by number
+    config) #calls a default editor to modify the config using default editor selection
+      $EDITOR $TASKCONFIG
+      break
+      ;;
+    edit) #calls a default editor to modify the existing TASK entries (note does not modify ATQ)
+      $EDITOR $TASKPATH
+      echo "tasks edited, note that existing ATQ entries are not modified, you may need to delete manually with atrm <#>"
+      break
+      ;;
+    -d|--delete|--done) #delete line entry by number
       cat -n ${TASKPATH}
-      echo "do you wish to delete line entry $@? Y|n"
+      echo "do you wish to delete task entry $@? Y|n - will also delete at queue entry"
       read reply
       case $reply in
-        y|Y)
+        y|Y) ## NEED TO INCLUDE A CHECK THAT IF ENTRY=0 THEN SKIP ALERT_REMOVE
           shift
+          #define the line entry you are deleting as a variable to be removed
           DLINE="$@"
+          #find the associated ATQ entry for the dline entry, to then call alert_removal
+          # checks taskpath, looking for the # you selected, then uses cut to highlight the 
+          # ATQ value stored between the '+' symbols, and extracts/sets the ENTRY value
+          ENTRY=$(cat -n $TASKPATH | grep ${DLINE} | cut -d "+" -f2)
+            #cut -d "=" -f2 <<< "$your_str"#
+            #...| awk 'BEGIN { FS = "|" } {'printf %-5s\n, $8'})') #removed
+          #use sed to overwrite/remove the entry/clear task
           sed -i "${DLINE}d" $TASKPATH
           echo "deleted!"
-          ;;
-        n|N)
+          # call atq removal:
+          alert_remove
+          break
+            ;;
+        n|N) 
           echo "cancelled delete"
           exit 1
+            ;;
+        *)
+          echo "non y/n answer provided, no change"
+          exit 0
           ;;
         esac
         break
         ;;
-    -c|clear) # remove all reminders
+    -C|--clear) # purge all reminders
        echo "do you wish to purge all task entries?"
        read reply
        case $reply in
          y|Y)
            shift
            echo "removing all reminders"
+          #easiest to just nuke the file and re-init if you want them all gone
            rm $TASKPATH
            touch $TASKPATH
+           # call atq cleanup:
+           alert_remove_all
            ;;
          n|N)
            echo "cancelled delete"
-           exit 1
+           exit 0
+           ;;
+         *)
+           echo "non y/n answer provided, no change"
+           exit 0
            ;;
          esac
          break
          ;;
-      *) #no option default
-        echo "##--task-list--##"
-        echo "all active tasks: use -h for more options"
-        cat -n ${TASKPATH}
-		    break
+    *) #no option default -- print all tasks on node + formatting for column alignment (print on 'task' --noopts)
+        echo " ++++++++++++++++++++++++++++"
+        echo "      JOBS ON THIS NODE"
+        echo " =~=~=~=~=~=~=~=~=~=~=~=~=~=~"
+        if [[ "$GPU_TOGGLE" = true ]]
+          then
+            echo "GPU IS TOGGLED TRUE"
+            echo "JOB TASK ETA ATQ GPU USER" | awk '{ printf "%-8s %-50s %-7s %-6s %-5s %-2s\n", $1, $2, $3, $4, $5, $6}' #test
+            cat -n ${TASKPATH} | awk 'BEGIN { FS = "|" };{ printf "%-57s %-5s %-5s %-5s %-8s\n", $1, $2, $3, $4, $5, $6}' #test
+          else
+            echo "GPU IS TOGGLED FALSE"
+            echo "JOB TASK ETA ATQ USER" | awk '{ printf "%-8s %-50s %-7s %-6s %-5s %-2s\n", $1, $2, $3, $4, $5, $6}' #test
+            cat -n ${TASKPATH} | awk 'BEGIN { FS = "|" };{ printf "%-57s %-5s %-5s %-5s %-8s\n", $1, $2, $3, $4, $5, $6}' #test
+        fi
+        #ORIGINALS:
+        #echo "JOB USER TASK ETA ATQ GPU" | awk '{ printf "%-5s %-20s %-38s %-15s %-2s\n", $1, $2, $3, $4, $5}' #default
+        #cat -n ${TASKPATH} | awk 'BEGIN { FS = "|" };{ printf "%-1s %-50s %-15s %-10s\n", $1, $2, $3, $4, $5}' #default
+        
+        break #MOVE THE USER ENTRY TO THE END SO IT DOESN'T IMPACT THE LAYOUT
 		;;
   esac
 done

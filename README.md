@@ -1,16 +1,17 @@
 # task
+ A CLI reminders and task management toolkit
+Written by Will Russell/Scotchman0
+Last patch update: 7/3/22
 
-A work in progress repository to hold a reminder CLI toolkit - version 0.2
+DEVELOP BRANCH TO BECOME STANDALONE RELEASE FOR JOB MANAGEMENT ON NODES + SHARED WORKLOAD MANAGEMENT
+ - version 1.0
 
 # RECENT PATCH:
-- removed '-a', tasks now print with 'task' command by default
-- added '-d' to remove by line
-- added '-c' clear now offers a yes/no confirmation before wiping all tasks
-- added '-r' option for reminder block entry (WIP) to set a timer and add cli notifications
+Major Overhaul
 
 # NEXT UPDATE GOALS:
-- add reminders with 'at' + system notification/alerts
 
 # Overview:
 A simple CLI task manager that lets you print strings to a file for CLI recall/management. Echos contents to `~/.*shrc` on new shell startup and can be called manually with 'task'
-Work in progress
+
+The NODE_MANAGEMENT branch is explicitly for shared task management on compute endpoints. This branch was purpose-built to support alerting users what jobs are running 
