@@ -26,3 +26,46 @@ The first major revision of TASK now supports the following:
 A simple CLI task manager that lets you print strings to a file for CLI recall/management. Echos contents to `~/.*shrc` on new shell startup and can be called manually with 'task'
 
 The NODE_MANAGEMENT branch is explicitly for shared task management on compute endpoints. This branch was purpose-built to support alerting users what jobs are running 
+
+# Usage:
+~~~
+#######  task help #######
+
+command usage: $ task <option> <string>
+
+
+
+ -h|help: print this brief help
+
+ -n|--new: create new reminder entry --> $ task -n 'buy eggs'
+
+ >>> '-n' has follow-up prompts: ETA for reminders and a GPU in-use Y/N prompt
+
+ -d|--delete: delete line entry by number... ex: 'task -d 3'
+
+ -C|--clear: purge all reminders from list
+
+ config: open an editor and modify the config file to set options
+
+ edit: opens an editor to modify the raw task file to modify entries manually
+
+
+
+description of task columns:
+
+
+
+   JOB       |     TASK      |  ETA   |       ATQ         |  GPU  | USER
+
+<job number> | <description> | <time> | <reminder number> | <Y/N> | <username>
+
+
+
+JOB      TASK                                          ETA     ATQ    GPU   USER
+
+1   This is an example task                            20:59   +64+   Y     will
+
+2   Docker training in progress                        NONE   +NONE+   N    john
+
+#######  task help #######
+~~~
