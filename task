@@ -37,11 +37,14 @@ touch ${TASKPATH}
 touch ${TASKCONFIG}
 chmod 666 $TASKPATH
 echo "this software uses the package 'at' - please ensure it is installed/enabled to allow reminders"
-echo "Will create reminders in queue 'T' - set this value manually if you wish with 'task setup"
+echo "Will create reminders in queue 'T' - set this value manually if you wish with 'task config"
 echo "#Taskconfig settings for task script written/maintained by Will Russell/Scotchman0" >> $TASKCONFIG
 echo "#The following variables can be set to modify base behavior" >> $TASKCONFIG
 echo "QUEUE=T #define defult atq for jobs relating to task" >> $TASKCONFIG
 echo "GPU_TOGGLE=true #sets option for 'GPU' column being gathered/watched in task- set to false to skip" >> $TASKCONFIG
+echo "NOTIFY=notify-send #options: 'notify-send', 'wall-echo', 'mail' --> set option on how atq will alert you" >> $TASKCONFIG
+echo "MAIL_RECIPIENTS='admin@example.com' #takes a comma-separated list of users, quoted: 'admin@example.com,admin2@example.com,..." >> $TASKCONFIG
+echo "#Note that 'NOTIFY' and 'MAIL_RECIPEINTS must both be set, and a mail-handler must be preconfigured">> $TASKCONFIG
 }
 
 
@@ -75,12 +78,30 @@ alert() { ##currently the logic works, but doesn't entirely seem to want to exec
     "null" #null update so that logic completes withough complaining
     exit 0
   else
-    #placement of custom 'T' task queue to keep things unified -- Note, select EITHER "wall echo" or
-    # "notify-send" from echo options below, there is currently only one atq value for jobs
+    #placement of custom 'T' task queue to keep things unified:
+    echo "TEST"
+    if [[ "$NOTIFY" = notify-send ]]
+      then
+        echo "notify-send 'node job has completed: $REMINDER' " | at -q $QUEUE $ETA
+        AT_QUEUE=$(atq -q ${QUEUE} | tail -n 1 | awk {'print $1'})
+    elif [[ "$NOTIFY" = wall-echo ]]
+      then
+        echo "wall 'node job has completed: $REMINDER'" | at -q $QUEUE $ETA
+        AT_QUEUE=$(atq -q ${QUEUE} | tail -n 1 | awk {'print $1'})
+    elif [[ "$NOTIFY" = mail ]]
+      then
+        echo "mail -s 'node job has completed: $REMINDER' $MAIL_RECIPIENTS" | at -q $QUEUE $ETA
+        AT_QUEUE=$(atq -q ${QUEUE} | tail -n 1 | awk {'print $1'})
+    else
+      echo "'task config' option NOTIFY not defined, defaulting to notify-send"
+      echo "notify-send 'node job has completed: $REMINDER' " | at -q $QUEUE $ETA 
+      AT_QUEUE=$(atq -q ${QUEUE} | tail -n 1 | awk {'print $1'})
+    fi
 
-    echo "notify-send 'node job has completed: $REMINDER' " | at -q $QUEUE $ETA 
-    #echo "wall 'node job has completed: $REMINDER'" | at -q $QUEUE $ETA
-    AT_QUEUE=$(atq -q ${QUEUE} | tail -n 1 | awk {'print $1'})
+
+    # echo "notify-send 'node job has completed: $REMINDER' " | at -q $QUEUE $ETA 
+    # #echo "wall 'node job has completed: $REMINDER'" | at -q $QUEUE $ETA
+    # AT_QUEUE=$(atq -q ${QUEUE} | tail -n 1 | awk {'print $1'})
 
     #tried to implement a 'delete task atq job in the same line, but it can't handle it, so creating a second job:
     echo "sed -i '/$REMINDER/d' $TASKPATH" | at -q $QUEUE $ETA
@@ -132,7 +153,7 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
       echo " -d|--delete: delete line entry by number... ex: 'task -d 3'"
       echo " -C|--clear: purge all reminders from list"
       echo " config: open an editor and modify the config file to set options"
-      echo " edit: opens an editor to modify the raw task file to modify entries"
+      echo " edit: opens an editor to modify the raw task file to modify entries manually"
       echo ""
       echo "description of task columns:"
       echo ""
