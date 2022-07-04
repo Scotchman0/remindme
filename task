@@ -79,32 +79,26 @@ alert() { ##currently the logic works, but doesn't entirely seem to want to exec
     exit 0
   else
     #placement of custom 'T' task queue to keep things unified:
-    echo "TEST"
     if [[ "$NOTIFY" = notify-send ]]
       then
-        echo "notify-send 'node job has completed: $REMINDER' " | at -q $QUEUE $ETA
+        echo "notify-send 'node job has completed: $REMINDER' " | at -q $QUEUE $ETA 2>/dev/null
         AT_QUEUE=$(atq -q ${QUEUE} | tail -n 1 | awk {'print $1'})
     elif [[ "$NOTIFY" = wall-echo ]]
       then
-        echo "wall 'node job has completed: $REMINDER'" | at -q $QUEUE $ETA
+        echo "wall 'node job has completed: $REMINDER'" | at -q $QUEUE $ETA 2>/dev/null
         AT_QUEUE=$(atq -q ${QUEUE} | tail -n 1 | awk {'print $1'})
     elif [[ "$NOTIFY" = mail ]]
       then
-        echo "mail -s 'node job has completed: $REMINDER' $MAIL_RECIPIENTS" | at -q $QUEUE $ETA
+        echo "mail -s 'node job has completed: $REMINDER' $MAIL_RECIPIENTS" | at -q $QUEUE $ETA 2>/dev/null
         AT_QUEUE=$(atq -q ${QUEUE} | tail -n 1 | awk {'print $1'})
     else
       echo "'task config' option NOTIFY not defined, defaulting to notify-send"
-      echo "notify-send 'node job has completed: $REMINDER' " | at -q $QUEUE $ETA 
+      echo "notify-send 'node job has completed: $REMINDER' " | at -q $QUEUE $ETA  2>/dev/null
       AT_QUEUE=$(atq -q ${QUEUE} | tail -n 1 | awk {'print $1'})
     fi
 
-
-    # echo "notify-send 'node job has completed: $REMINDER' " | at -q $QUEUE $ETA 
-    # #echo "wall 'node job has completed: $REMINDER'" | at -q $QUEUE $ETA
-    # AT_QUEUE=$(atq -q ${QUEUE} | tail -n 1 | awk {'print $1'})
-
     #tried to implement a 'delete task atq job in the same line, but it can't handle it, so creating a second job:
-    echo "sed -i '/$REMINDER/d' $TASKPATH" | at -q $QUEUE $ETA
+    echo "sed -i '/$REMINDER/d' $TASKPATH" | at -q $QUEUE $ETA 2>/dev/null
     DEL_JOB=$(atq -q ${QUEUE} | tail -n 1 | awk {'print $1'})
   fi
 }
@@ -272,19 +266,13 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
         echo " =~=~=~=~=~=~=~=~=~=~=~=~=~=~"
         if [[ "$GPU_TOGGLE" = true ]]
           then
-            echo "GPU IS TOGGLED TRUE"
             echo "JOB TASK ETA ATQ GPU USER" | awk '{ printf "%-8s %-50s %-7s %-6s %-5s %-2s\n", $1, $2, $3, $4, $5, $6}' #test
             cat -n ${TASKPATH} | awk 'BEGIN { FS = "|" };{ printf "%-57s %-5s %-5s %-5s %-8s\n", $1, $2, $3, $4, $5, $6}' #test
           else
-            echo "GPU IS TOGGLED FALSE"
             echo "JOB TASK ETA ATQ USER" | awk '{ printf "%-8s %-50s %-7s %-6s %-5s %-2s\n", $1, $2, $3, $4, $5, $6}' #test
             cat -n ${TASKPATH} | awk 'BEGIN { FS = "|" };{ printf "%-57s %-5s %-5s %-5s %-8s\n", $1, $2, $3, $4, $5, $6}' #test
         fi
-        #ORIGINALS:
-        #echo "JOB USER TASK ETA ATQ GPU" | awk '{ printf "%-5s %-20s %-38s %-15s %-2s\n", $1, $2, $3, $4, $5}' #default
-        #cat -n ${TASKPATH} | awk 'BEGIN { FS = "|" };{ printf "%-1s %-50s %-15s %-10s\n", $1, $2, $3, $4, $5}' #default
-        
-        break #MOVE THE USER ENTRY TO THE END SO IT DOESN'T IMPACT THE LAYOUT
+        break 
 		;;
   esac
 done
