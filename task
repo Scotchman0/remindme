@@ -215,9 +215,9 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
           #find the associated ATQ entry for the dline entry, to then call alert_removal
           # checks taskpath, looking for the # you selected, then uses cut to highlight the 
           # ATQ value stored between the '+' symbols, and extracts/sets the ENTRY value
-          ENTRY=$(cat -n $TASKPATH | grep ${DLINE} | cut -d "+" -f2)
-            #cut -d "=" -f2 <<< "$your_str"#
-            #...| awk 'BEGIN { FS = "|" } {'printf %-5s\n, $8'})') #removed
+          # Note, this doesn't delete the 'second atq entry that is set for cleanup but that's OK'
+          # these stale entries self-resolve with no alert/fuss and can be purged with 'task -C' or 'atrm #'
+          ENTRY=$(cat -n $TASKPATH | grep ${DLINE} | cut -d "+" -f2)          
           #use sed to overwrite/remove the entry/clear task
           sed -i "${DLINE}d" $TASKPATH
           echo "deleted!"
