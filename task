@@ -40,6 +40,7 @@ echo "this software uses the package 'at' - please ensure it is installed/enable
 echo "Will create reminders in queue 'T' - set this value manually if you wish with 'task config"
 echo "#Taskconfig settings for task script written/maintained by Will Russell/Scotchman0" >> $TASKCONFIG
 echo "#The following variables can be set to modify base behavior" >> $TASKCONFIG
+echo "EDITOR=vi #set to nano, vim or other text editor to allow modifying files, set to vi by default"  >> $TASKCONFIG
 echo "QUEUE=T #define defult atq for jobs relating to task" >> $TASKCONFIG
 echo "GPU_TOGGLE=true #sets option for 'GPU' column being gathered/watched in task- set to false to skip" >> $TASKCONFIG
 echo "NOTIFY=notify-send #options: 'notify-send', 'wall-echo', 'mail' --> set option on how atq will alert you" >> $TASKCONFIG
