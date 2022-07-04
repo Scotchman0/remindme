@@ -21,11 +21,8 @@
 #      2  will   Long running inference project                     NONE   +NONE+   N  
 
 ######################~~VARIABLES~~##############################
-# TASKDIR=~/task-app
-# TASKPATH=$TASKDIR/tasks
-# TASKCONFIG=$TASKDIR/task.conf
 
-TASKDIR=/tmp/task-app
+TASKDIR=~/task-app
 TASKPATH=$TASKDIR/task_list
 TASKCONFIG=$TASKDIR/task.conf
 
@@ -106,9 +103,9 @@ alert_remove_all (){
 
 #CHECK IF THIS IS THE FIRST TIME THIS PROGRAM HAS RUN, CONFIGURE DEFAULTS IF SO:
 if [ ! -f "$TASKCONFIG" ]; then
+   echo "establishing default setup and storing tasks in ${TASKPATH}"
    setup
    auto_complete
-   echo "establishing default setup and storing tasks in ${TASKPATH}"
    echo "try task -h for usage and syntax"
 fi
 
