@@ -38,6 +38,7 @@ setup() {
 mkdir ${TASKDIR}
 touch ${TASKPATH}
 touch ${TASKCONFIG}
+chmod 666 $TASKPATH
 echo "this software uses the package 'at' - please ensure it is installed/enabled to allow reminders"
 echo "Will create reminders in queue 'T' - set this value manually if you wish with 'task setup"
 echo "#Taskconfig settings for task script written/maintained by Will Russell/Scotchman0" >> $TASKCONFIG
