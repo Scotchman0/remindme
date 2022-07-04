@@ -41,6 +41,7 @@ echo "Will create reminders in queue 'T' - set this value manually if you wish w
 echo "#Taskconfig settings for task script written/maintained by Will Russell/Scotchman0" >> $TASKCONFIG
 echo "#The following variables can be set to modify base behavior" >> $TASKCONFIG
 echo "QUEUE=T #define defult atq for jobs relating to task" >> $TASKCONFIG
+echo "GPU_TOGGLE=true #sets option for 'GPU' column being gathered/watched in task- set to false to skip" >> $TASKCONFIG
 }
 
 
@@ -115,6 +116,8 @@ fi
 #source the config file
 . ${TASKCONFIG}
 
+echo $GPU_TOGGLE
+
 #primary action block:
 while test $# -gt -1; do #general while loop to lock behavior surrounding case options. 
   case "$1" in
@@ -161,10 +164,18 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
               ETA=NONE
               AT_QUEUE="NONE"
           fi
-          echo "Toggle indicator for GPU in-use: (Y/N)"
-          read GPU
+          if [[ "$GPU_TOGGLE" = true ]]
+          then
+            echo "Toggle indicator for GPU in-use: (Y/N)"
+            read GPU
+            #print the primary output to the $TASKPATH file once options set
+            echo " $@ | $ETA | +$AT_QUEUE+ | $GPU | ${USER}" >> ${TASKPATH}
+          else 
           #print the primary output to the $TASKPATH file once options set
-          echo " $@ | $ETA | +$AT_QUEUE+ | $GPU | ${USER}" >> ${TASKPATH}
+          echo " $@ | $ETA | +$AT_QUEUE+ | ${USER}" >> ${TASKPATH}
+          fi
+          # #print the primary output to the $TASKPATH file once options set
+          # echo " $@ | $ETA | +$AT_QUEUE+ | $GPU | ${USER}" >> ${TASKPATH}
         else
           "null"
         fi
@@ -240,10 +251,20 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
         echo " ++++++++++++++++++++++++++++"
         echo "      JOBS ON THIS NODE"
         echo " =~=~=~=~=~=~=~=~=~=~=~=~=~=~"
+        if [[ "$GPU_TOGGLE" = true ]]
+          then
+            echo "GPU IS TOGGLED TRUE"
+            echo "JOB TASK ETA ATQ GPU USER" | awk '{ printf "%-8s %-50s %-7s %-6s %-5s %-2s\n", $1, $2, $3, $4, $5, $6}' #test
+            cat -n ${TASKPATH} | awk 'BEGIN { FS = "|" };{ printf "%-57s %-5s %-5s %-5s %-8s\n", $1, $2, $3, $4, $5, $6}' #test
+          else
+            echo "GPU IS TOGGLED FALSE"
+            echo "JOB TASK ETA ATQ USER" | awk '{ printf "%-8s %-50s %-7s %-6s %-5s %-2s\n", $1, $2, $3, $4, $5, $6}' #test
+            cat -n ${TASKPATH} | awk 'BEGIN { FS = "|" };{ printf "%-57s %-5s %-5s %-5s %-8s\n", $1, $2, $3, $4, $5, $6}' #test
+        fi
+        #ORIGINALS:
         #echo "JOB USER TASK ETA ATQ GPU" | awk '{ printf "%-5s %-20s %-38s %-15s %-2s\n", $1, $2, $3, $4, $5}' #default
         #cat -n ${TASKPATH} | awk 'BEGIN { FS = "|" };{ printf "%-1s %-50s %-15s %-10s\n", $1, $2, $3, $4, $5}' #default
-        echo "JOB TASK ETA ATQ GPU USER" | awk '{ printf "%-8s %-50s %-7s %-6s %-5s %-2s\n", $1, $2, $3, $4, $5, $6}' #test
-        cat -n ${TASKPATH} | awk 'BEGIN { FS = "|" };{ printf "%-57s %-5s %-5s %-5s %-8s\n", $1, $2, $3, $4, $5, $6}' #test
+        
         break #MOVE THE USER ENTRY TO THE END SO IT DOESN'T IMPACT THE LAYOUT
 		;;
   esac
