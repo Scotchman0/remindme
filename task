@@ -123,17 +123,24 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
     -h|help)
       shift
       echo "#######  task help #######"
-      echo ""
       echo "command usage: $ task <option> <string>"
+      echo ""
       echo " -h|help: print this brief help"
       echo " -n|--new: create new reminder entry --> $ task -n 'buy eggs'"
       echo " >>> '-n' has follow-up prompts: ETA for reminders and a GPU in-use Y/N prompt"
-      echo ""
       echo " -d|--delete: delete line entry by number... ex: 'task -d 3'"
       echo " -C|--clear: purge all reminders from list"
       echo " config: open an editor and modify the config file to set options"
       echo " edit: opens an editor to modify the raw task file to modify entries"
       echo ""
+      echo "description of task columns:"
+      echo ""
+      echo "   JOB       |     TASK      |  ETA   |       ATQ         |  GPU  | USER"
+      echo "<job number> | <description> | <time> | <reminder number> | <Y/N> | <username>"
+      echo ""
+      echo "JOB      TASK                                          ETA     ATQ    GPU   USER"
+      echo "1   This is an example task                            20:59   +64+   Y     will"
+      echo "2   Docker training in progress                        NONE   +NONE+   N    john"
       echo "#######  task help #######"
       break
       ;;
