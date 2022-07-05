@@ -25,7 +25,8 @@ The first major revision of TASK now supports the following:
 # Overview:
 A simple CLI task manager that lets you print strings to a file for CLI recall/management. Echos contents to `~/.*shrc` on new shell startup and can be called manually with 'task'
 
-The NODE_MANAGEMENT branch is explicitly for shared task management on compute endpoints. This branch was purpose-built to support alerting users what jobs are running 
+The main branch is explicitly for shared task management on compute endpoints. This was purpose-built to support alerting users what jobs are running 
+The simplified branch will be used for single-user project tasking and 'todo' handling (less group-oriented)
 
 # Usage:
 ~~~
