@@ -172,7 +172,8 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
           read SETTIME
           if [[ ${SETTIME} != 0 ]]
             then
-              ETA=$(echo $(date -d +${SETTIME}hours +%H:%M))
+              #ETA=$(echo $(date -d +${SETTIME}hours +%H:%M))
+              ETA=$(echo $(date -d +${SETTIME}hours "+%H:%M %D"))
               alert
             else
               ETA=NONE
@@ -267,7 +268,7 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
         echo " =~=~=~=~=~=~=~=~=~=~=~=~=~=~"
         if [[ "$GPU_TOGGLE" = true ]]
           then
-            echo "JOB TASK ETA ATQ GPU USER" | awk '{ printf "%-8s %-50s %-7s %-6s %-5s %-2s\n", $1, $2, $3, $4, $5, $6}' #test
+            echo "JOB TASK ETA ATQ GPU USER" | awk '{ printf "%-8s %-50s %-17s %-6s %-5s %-2s\n", $1, $2, $3, $4, $5, $6}' #test
             cat -n ${TASKPATH} | awk 'BEGIN { FS = "|" };{ printf "%-57s %-5s %-5s %-5s %-8s\n", $1, $2, $3, $4, $5, $6}' #test
           else
             echo "JOB TASK ETA ATQ USER" | awk '{ printf "%-8s %-50s %-7s %-6s %-5s %-2s\n", $1, $2, $3, $4, $5, $6}' #test
