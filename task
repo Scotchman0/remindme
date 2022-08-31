@@ -42,7 +42,8 @@ echo "#Taskconfig settings for task script written/maintained by Will Russell/Sc
 echo "#The following variables can be set to modify base behavior" >> $TASKCONFIG
 echo "EDITOR=vi #set to nano, vim or other text editor to allow modifying files, set to vi by default"  >> $TASKCONFIG
 echo "QUEUE=T #define defult atq for jobs relating to task" >> $TASKCONFIG
-echo "GPU_TOGGLE=true #sets option for 'GPU' column being gathered/watched in task- set to false to skip" >> $TASKCONFIG
+echo "GPU_TOGGLE=true #sets option for 'GPU' column being gathered/watched in task- set to false to omit" >> $TASKCONFIG
+echo "NETWORK_TOGGLE=true #sets option for 'NET' column being gathered/watched in task - set to false to omit" >> $TASKCONFIG
 echo "NOTIFY=notify-send #options: 'notify-send', 'wall-echo', 'mail' --> set option on how atq will alert you" >> $TASKCONFIG
 echo "MAIL_RECIPIENTS='admin@example.com' #takes a comma-separated list of users, quoted: 'admin@example.com,admin2@example.com,..." >> $TASKCONFIG
 echo "#Note that 'NOTIFY' and 'MAIL_RECIPEINTS must both be set, and a mail-handler must be preconfigured">> $TASKCONFIG
@@ -143,19 +144,23 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
       echo " -h|help: print this brief help"
       echo " -n|--new: create new reminder entry --> $ task -n 'buy eggs'"
       echo " >>> '-n' has follow-up prompts: ETA for reminders and a GPU in-use Y/N prompt"
+      echo ""
       echo " -d|--delete: delete line entry by number... ex: 'task -d 3'"
-      echo " -C|--clear: purge all reminders from list"
-      echo " config: open an editor and modify the config file to set options"
-      echo " edit: opens an editor to modify the raw task file to modify entries manually"
+      echo " -C|--clear: purge all reminders from list: 'task -C'"
+      echo " config: open an editor and modify the config file to set options: 'task config'"
+      echo " edit: opens an editor to modify the raw task file to modify entries manually: 'task edit'"
       echo ""
       echo "description of task columns:"
       echo ""
-      echo "   JOB       |     TASK      |  ETA   |       ATQ         |  GPU  | USER"
-      echo "<job number> | <description> | <time> | <reminder number> | <Y/N> | <username>"
+      echo "     JOB     |     TASK      |  ETA   |        ATQ        |  GPU  |  NET  | USER"
+      echo "<job number> | <description> | <time> | <reminder number> | <Y/N> | <Y/N> | <username>"
       echo ""
-      echo "JOB      TASK                                          ETA     ATQ    GPU   USER"
-      echo "1   This is an example task                            20:59   +64+   Y     will"
-      echo "2   Docker training in progress                        NONE   +NONE+   N    john"
+      echo "JOB      TASK                                          ETA     ATQ    GPU  NET  USER"
+      echo "1   This is an example task                            20:59   +64+    Y    N   will"
+      echo "2   Docker training in progress                        NONE   +NONE+   N    Y   john"
+      echo ""
+      echo ""
+
       echo "#######  task help #######"
       break
       ;;
@@ -163,6 +168,7 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
       shift
       #Default value setting of variables
       GPU="N"
+      NETWORK="N"
       USER=$(whoami)
       # logical call set for 'task was submitted, and has a value after -n of length longer than 0'
         if test $# -gt 0; then
@@ -170,26 +176,38 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
           REMINDER=$@
           echo "Set ETA value as integer in hours, insert 0 for none"
           read SETTIME
+          
           if [[ ${SETTIME} != 0 ]]
             then
-              ETA=$(echo $(date -d +${SETTIME}hours +%H:%M))
-              alert
+              ETA=$(echo $(date -d +${SETTIME}hours +%H:%M)) #echo datetime as readable value for AT system
+              alert #call alert module with new data
             else
               ETA=NONE
               AT_QUEUE="NONE"
           fi
+          
+          #GPU options:
           if [[ "$GPU_TOGGLE" = true ]]
           then
-            echo "Toggle indicator for GPU in-use: (Y/N)"
+            echo "Toggle indicator for GPU in-use: (y/N)"
             read GPU
             #print the primary output to the $TASKPATH file once options set
-            echo " $@ | $ETA | +$AT_QUEUE+ | $GPU | ${USER}" >> ${TASKPATH}
-          else 
-          #print the primary output to the $TASKPATH file once options set
-          echo " $@ | $ETA | +$AT_QUEUE+ | ${USER}" >> ${TASKPATH}
+          else
+            dummyval="null"
           fi
-          # #print the primary output to the $TASKPATH file once options set
-          # echo " $@ | $ETA | +$AT_QUEUE+ | $GPU | ${USER}" >> ${TASKPATH}
+
+          #NETWORK usage options:
+          if [[ "$NETWORK_TOGGLE" = true ]]
+          then
+            echo "Toggle indicator for network-intensive tasking: (y/N)"
+            read NETWORK
+          else
+            dummyval="null"
+          fi
+          #echo all selected outputs to file at $TASKPATH once options have been set:
+          echo " $@ | $ETA | +$AT_QUEUE+ | $GPU | $NETWORK | ${USER}" >> ${TASKPATH}
+
+        #catch-all-else:
         else
           "null"
         fi
@@ -265,13 +283,37 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
         echo " ++++++++++++++++++++++++++++"
         echo "      JOBS ON THIS NODE"
         echo " =~=~=~=~=~=~=~=~=~=~=~=~=~=~"
-        if [[ "$GPU_TOGGLE" = true ]]
+
+          #JOB=1
+          #TASK=2
+          #ETA=3
+          #ATQ=4 
+          #GPU=5 
+          #NET=6 
+          #USER=7
+
+
+        if [[ "$GPU_TOGGLE" = true && "$NETWORK_TOGGLE" = true ]] #both enabled
           then
-            echo "JOB TASK ETA ATQ GPU USER" | awk '{ printf "%-8s %-50s %-7s %-6s %-5s %-2s\n", $1, $2, $3, $4, $5, $6}' #test
-            cat -n ${TASKPATH} | awk 'BEGIN { FS = "|" };{ printf "%-57s %-5s %-5s %-5s %-8s\n", $1, $2, $3, $4, $5, $6}' #test
-          else
-            echo "JOB TASK ETA ATQ USER" | awk '{ printf "%-8s %-50s %-7s %-6s %-5s %-2s\n", $1, $2, $3, $4, $5, $6}' #test
-            cat -n ${TASKPATH} | awk 'BEGIN { FS = "|" };{ printf "%-57s %-5s %-5s %-5s %-8s\n", $1, $2, $3, $4, $5, $6}' #test
+            echo "JOB TASK ETA ATQ GPU NET USER" | awk '{ printf "%-8s %-50s %-7s %-5s %-5s %-8s %-5s\n", $1, $2, $3, $4, $5, $6, $7}'
+            cat -n ${TASKPATH} | awk 'BEGIN { FS = "|" };{ printf "%-57s %-5s %-5s %-5s %-7s %-30s\n", $1, $2, $3, $4, $5, $6, $7}' 
+          
+          #network on, GPU off
+          elif [[ "$NETWORK_TOGGLE" = true && "$GPU_TOGGLE" = false ]]
+            then
+              echo "JOB TASK ETA ATQ NET USER" | awk '{ printf "%-8s %-50s %-7s %-6s %-5s %-2s\n", $1, $2, $3, $4, $5, $6}' 
+              cat -n ${TASKPATH} | awk 'BEGIN { FS = "|" };{ printf "%-57s %-5s %-6s %-5s %-30s\n", $1, $2, $3, $5, $6, $8}' 
+          
+          #GPU on, Network off
+          elif [[ "$GPU_TOGGLE" = true && "$NETWORK_TOGGLE" = false ]]  
+            then
+              echo "JOB TASK ETA ATQ GPU USER" | awk '{ printf "%-8s %-50s %-7s %-6s %-5s %-2s\n", $1, $2, $3, $4, $5, $6}' 
+              cat -n ${TASKPATH} | awk 'BEGIN { FS = "|" };{ printf "%-57s %-5s %-6s %-5s %-30s\n", $1, $2, $3, $4, $6, $8}' 
+          
+          #neither GPU or Network enabled 
+        else 
+            echo "JOB TASK ETA ATQ USER" | awk '{ printf "%-8s %-50s %-7s %-6s %-5s\n", $1, $2, $3, $4, $5}' 
+            cat -n ${TASKPATH} | awk 'BEGIN { FS = "|" };{ printf "%-57s %-5s %-6s %-30s\n", $1, $2, $3, $6}'
         fi
         break 
 		;;
