@@ -137,6 +137,9 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
           DLINE="$@"
           sed -i "${DLINE}d" $TASKPATH
           echo "deleted!"
+          clear
+          cat -n ${TASKPATH}
+
           ;;
         n|N)
           echo "cancelled delete"
