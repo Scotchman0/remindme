@@ -33,6 +33,7 @@
 
 ######################~~VARIABLES~~##############################
 TASKPATH=~/.task_list
+command=mytask
 
 
 ####################################~~FUNCTION BLOCKS~~########################
@@ -92,12 +93,12 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
     -h|help)
       shift
       echo "#######  task help #######"
-      echo "command usage: $ task <option> <string>"
-      echo "task -h|help: print this breif help"
-      echo "task -n|new: create new reminder entry --> $ task -n 'buy eggs'"
-      echo "task -d|delete: delete line entry by number... ex: 'task -d 3'"
-      echo "task -c|clear: purge all reminders from list"
-      echo "task -r|reminder: set a date or a timer for a task alert..."
+      echo "command usage: ${command} <option> <string>"
+      echo "$command -h|help: print this breif help"
+      echo "$command -n|new: create new reminder entry --> $ task -n 'buy eggs'"
+      echo "$command -d|delete: delete line entry by number... ex: 'task -d 3'"
+      echo "$command -c|clear: purge all reminders from list"
+      echo "$command -r|reminder: add a date or a timer for an existing task... (to be implemented) ex: $command -r 18"
       break
       ;;
     -r|reminder) #create an alert attached to existing line entry
@@ -119,7 +120,7 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
         esac
         break
         ;;
-        -n|new) #create new note or edit existing note (*if specify exact note name)
+    -n|new) #create new note or edit existing note (*if specify exact note name)
       shift
       if test $# -gt 0; then
         echo $@ >> ${TASKPATH}

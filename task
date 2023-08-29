@@ -2,9 +2,9 @@
 #TASK - A CLI reminders and task management toolkit
 #CLI reminder toolkit for alerts/terminal headers and more
 #Written by Will Russell/Scotchman0
-#patch update: 7/3/22
+#patch update: 8/29/23
 #DEVELOP BRANCH TO BECOME NEW FORK FOR JOB MANAGEMENT ON NODES + SHARED WORKLOAD MANAGEMENT
-#Version=1.0
+#Version=1.1
 
 #In order to share access to the common task path, override the defaults set below in variables
 #With your own common target/desired dir, and ensure all users can view/edit contents of taskdir
@@ -40,13 +40,14 @@ echo "this software uses the package 'at' - please ensure it is installed/enable
 echo "Will create reminders in queue 'T' - set this value manually if you wish with 'task config"
 echo "#Taskconfig settings for task script written/maintained by Will Russell/Scotchman0" >> $TASKCONFIG
 echo "#The following variables can be set to modify base behavior" >> $TASKCONFIG
+echo "BANNER='ACTIVE TASK LIST' #default display text; feel free to change this" >> $TASKCONFIG
 echo "EDITOR=vi #set to nano, vim or other text editor to allow modifying files, set to vi by default"  >> $TASKCONFIG
 echo "QUEUE=T #define defult atq for jobs relating to task" >> $TASKCONFIG
-echo "GPU_TOGGLE=true #sets option for 'GPU' column being gathered/watched in task- set to false to omit" >> $TASKCONFIG
-echo "NETWORK_TOGGLE=true #sets option for 'NET' column being gathered/watched in task - set to false to omit" >> $TASKCONFIG
+echo "GPU_TOGGLE=false #sets option for 'GPU' column being gathered/watched in task- set to false to omit" >> $TASKCONFIG
+echo "NETWORK_TOGGLE=false #sets option for 'NET' column being gathered/watched in task - set to false to omit" >> $TASKCONFIG
 echo "NOTIFY=notify-send #options: 'notify-send', 'wall-echo', 'mail' --> set option on how atq will alert you" >> $TASKCONFIG
 echo "MAIL_RECIPIENTS='admin@example.com' #takes a comma-separated list of users, quoted: 'admin@example.com,admin2@example.com,..." >> $TASKCONFIG
-echo "#Note that 'NOTIFY' and 'MAIL_RECIPEINTS must both be set, and a mail-handler must be preconfigured">> $TASKCONFIG
+echo "#Note that 'NOTIFY' and 'MAIL_RECIPIENTS must both be set, and a mail-handler must be preconfigured to utilize mail alerts">> $TASKCONFIG
 }
 
 
@@ -281,7 +282,7 @@ while test $# -gt -1; do #general while loop to lock behavior surrounding case o
          ;;
     *) #no option default -- print all tasks on node + formatting for column alignment (print on 'task' --noopts)
         echo " ++++++++++++++++++++++++++++"
-        echo "      JOBS ON THIS NODE"
+        echo "${BANNER}"
         echo " =~=~=~=~=~=~=~=~=~=~=~=~=~=~"
 
           #JOB=1
